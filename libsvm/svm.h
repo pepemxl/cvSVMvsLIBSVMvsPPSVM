@@ -9,24 +9,40 @@ extern "C" {
 
 extern int libsvm_version;
 
-struct svm_node
-{
+/**
+ * svm_node
+ * Struct
+*/
+struct svm_node{
 	int index;
 	double value;
 };
 
-struct svm_problem
-{
+/**
+ * svm_problem
+ * Struct
+*/
+struct svm_problem{
 	int l;
 	double *y;
 	struct svm_node **x;
 };
 
-enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };	/* svm_type */
-enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED }; /* kernel_type */
+enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };	/** Enum to save distint SVM formulation names (svm_type)*/
+enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED }; /** Enum to save distinct kernel types */
 
-struct svm_parameter
-{
+
+/**
+ * Struct to save distinct parameters used by each formulation of SVM:
+ *
+ * SVC: Support vector classification (two-clase and multi-class).
+ * SVR: Support vector regression.
+ * One-class SVM.
+ *
+ * SVC and SVR can also output probability estimates.
+ *
+*/
+struct svm_parameter{
 	int svm_type;
 	int kernel_type;
 	int degree;	/* for poly */
@@ -46,28 +62,32 @@ struct svm_parameter
 	int probability; /* do probability estimates */
 };
 
-//
-// svm_model
-//
-struct svm_model
-{
+/**
+ * svm_model (for quadratic minimization problems)
+ * C-support vector classification C-SVC
+ * $\nu$-support vector classificaction  $\nu$-SVC
+ * Distribution estimation one-class SVM
+ * $\epsilon$-support vector regression $\epsilon$-SVR
+ * $\nu$-support vector regression $\nu$-SVR
+ *
+ *
+ */
+struct svm_model{
 	struct svm_parameter param;	/* parameter */
-	int nr_class;		/* number of classes, = 2 in regression/one class svm */
-	int l;			/* total #SV */
+    int nr_class;	          	/* number of classes, = 2 in regression/one class svm */
+    int l;			            /* total #SV */
 	struct svm_node **SV;		/* SVs (SV[l]) */
-	double **sv_coef;	/* coefficients for SVs in decision functions (sv_coef[k-1][l]) */
-	double *rho;		/* constants in decision functions (rho[k*(k-1)/2]) */
-	double *probA;		/* pariwise probability information */
+    double **sv_coef;	        /* coefficients for SVs in decision functions (sv_coef[k-1][l]) */
+    double *rho;		        /* constants in decision functions (rho[k*(k-1)/2]) */
+    double *probA;		        /* pariwise probability information */
 	double *probB;
-	int *sv_indices;        /* sv_indices[0,...,nSV-1] are values in [1,...,num_traning_data] to indicate SVs in the training set */
-
+    int *sv_indices;            /* sv_indices[0,...,nSV-1] are values in [1,...,num_traning_data] to indicate SVs in the training set */
 	/* for classification only */
-
-	int *label;		/* label of each class (label[k]) */
-	int *nSV;		/* number of SVs for each class (nSV[k]) */
+    int *label;                 /* label of each class (label[k]) */
+    int *nSV;                   /* number of SVs for each class (nSV[k]) */
 				/* nSV[0] + nSV[1] + ... + nSV[k-1] = l */
 	/* XXX */
-	int free_sv;		/* 1 if svm_model is created by svm_load_model*/
+    int free_sv;                /* 1 if svm_model is created by svm_load_model*/
 				/* 0 if svm_model is created by svm_train */
 };
 

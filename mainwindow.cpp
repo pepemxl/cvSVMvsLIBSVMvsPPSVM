@@ -14,7 +14,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
 void MainWindow::runPythonScript(char *path,char *fileName,char *extension){
     if(!this->getFlagPython()){
         fout = popen("/home/pepe/anaconda3/envs/opencv/bin/python", "w");

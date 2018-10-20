@@ -17,9 +17,14 @@ template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 #ifndef max
 template <class T> static inline T max(T x,T y) { return (x>y)?x:y; }
 #endif
-template <class T> static inline void swap(T& x, T& y) { T t=x; x=y; y=t; }
-template <class S, class T> static inline void clone(T*& dst, S* src, int n)
-{
+template <class T> static inline void swap(T& x, T& y) { 
+	T t=x; x=y; y=t; 
+}
+/**
+ * \brief 
+ * 
+ */ 
+template <class S, class T> static inline void clone(T*& dst, S* src, int n){
 	dst = new T[n];
 	memcpy((void *)dst,(void *)src,sizeof(T)*n);
 }
@@ -2589,12 +2594,9 @@ double svm_predict(const svm_model *model, const svm_node *x)
 	return pred_result;
 }
 
-double svm_predict_probability(
-	const svm_model *model, const svm_node *x, double *prob_estimates)
-{
+double svm_predict_probability(const svm_model *model, const svm_node *x, double *prob_estimates){
 	if ((model->param.svm_type == C_SVC || model->param.svm_type == NU_SVC) &&
-	    model->probA!=NULL && model->probB!=NULL)
-	{
+	    model->probA!=NULL && model->probB!=NULL){
 		int i;
 		int nr_class = model->nr_class;
 		double *dec_values = Malloc(double, nr_class*(nr_class-1)/2);
@@ -2605,47 +2607,45 @@ double svm_predict_probability(
 		for(i=0;i<nr_class;i++)
 			pairwise_prob[i]=Malloc(double,nr_class);
 		int k=0;
-		for(i=0;i<nr_class;i++)
-			for(int j=i+1;j<nr_class;j++)
-			{
+        for(i=0;i<nr_class;i++){
+			for(int j=i+1;j<nr_class;j++){
 				pairwise_prob[i][j]=min(max(sigmoid_predict(dec_values[k],model->probA[k],model->probB[k]),min_prob),1-min_prob);
 				pairwise_prob[j][i]=1-pairwise_prob[i][j];
 				k++;
 			}
-		if (nr_class == 2)
-		{
+        }
+        if(nr_class == 2){
 			prob_estimates[0] = pairwise_prob[0][1];
 			prob_estimates[1] = pairwise_prob[1][0];
-		}
-		else
+        }else{
 			multiclass_probability(nr_class,pairwise_prob,prob_estimates);
-
+        }
 		int prob_max_idx = 0;
-		for(i=1;i<nr_class;i++)
-			if(prob_estimates[i] > prob_estimates[prob_max_idx])
+        for(i=1;i<nr_class;i++){
+            if(prob_estimates[i] > prob_estimates[prob_max_idx]){
 				prob_max_idx = i;
-		for(i=0;i<nr_class;i++)
+            }
+        }
+        for(i=0;i<nr_class;i++){
 			free(pairwise_prob[i]);
+        }
 		free(dec_values);
 		free(pairwise_prob);
 		return model->label[prob_max_idx];
-	}
-	else
+    }else{
 		return svm_predict(model, x);
+    }
 }
 
-static const char *svm_type_table[] =
-{
+static const char *svm_type_table[] = {
 	"c_svc","nu_svc","one_class","epsilon_svr","nu_svr",NULL
 };
 
-static const char *kernel_type_table[]=
-{
+static const char *kernel_type_table[]= {
 	"linear","polynomial","rbf","sigmoid","precomputed",NULL
 };
 
-int svm_save_model(const char *model_file_name, const svm_model *model)
-{
+int svm_save_model(const char *model_file_name, const svm_model *model){
 	FILE *fp = fopen(model_file_name,"w");
 	if(fp==NULL) return -1;
 
@@ -2676,8 +2676,9 @@ int svm_save_model(const char *model_file_name, const svm_model *model)
 
 	{
 		fprintf(fp, "rho");
-		for(int i=0;i<nr_class*(nr_class-1)/2;i++)
+        for(int i=0;i<nr_class*(nr_class-1)/2;i++){
 			fprintf(fp," %.17g",model->rho[i]);
+        }
 		fprintf(fp, "\n");
 	}
 
