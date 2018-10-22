@@ -23,10 +23,12 @@ SOURCES += main.cpp\
     libsvm/svm.cpp \
     libsvm/svm-scale.c \
     libsvm/svm-train.c \
-    libsvm/svm-predict.c
+    libsvm/svm-predict.c \
+    mylabel.cpp
 
 HEADERS  += mainwindow.h \
-    libsvm/svm.h
+    libsvm/svm.h \
+    mylabel.h
 
 FORMS    += mainwindow.ui
 

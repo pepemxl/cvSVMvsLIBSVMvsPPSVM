@@ -5,7 +5,10 @@
 #include <errno.h>
 #include "svm.h"
 
-int print_null(const char *s,...) {return 0;}
+//!< Cambiado mientras se hace port
+//!< int print_null(const char *s,...) {return 0;}
+int print_null_predict(const char *s,...) {return 0;}
+
 
 static int (*info)(const char *fmt,...) = &printf;
 
@@ -36,7 +39,7 @@ static char* readline(FILE *input)
 	return line;
 }
 
-void exit_input_error(int line_num)
+void exit_input_error_predict(int line_num)
 {
 	fprintf(stderr,"Wrong input format at line %d\n", line_num);
 	exit(1);
@@ -82,11 +85,11 @@ void predict(FILE *input, FILE *output)
 
 		label = strtok(line," \t\n");
 		if(label == NULL) // empty line
-			exit_input_error(total+1);
+            exit_input_error_predict(total+1);
 
 		target_label = strtod(label,&endptr);
 		if(endptr == label || *endptr != '\0')
-			exit_input_error(total+1);
+            exit_input_error_predict(total+1);
 
 		while(1)
 		{
@@ -104,14 +107,14 @@ void predict(FILE *input, FILE *output)
 			errno = 0;
 			x[i].index = (int) strtol(idx,&endptr,10);
 			if(endptr == idx || errno != 0 || *endptr != '\0' || x[i].index <= inst_max_index)
-				exit_input_error(total+1);
+                exit_input_error_predict(total+1);
 			else
 				inst_max_index = x[i].index;
 
 			errno = 0;
 			x[i].value = strtod(val,&endptr);
 			if(endptr == val || errno != 0 || (*endptr != '\0' && !isspace(*endptr)))
-				exit_input_error(total+1);
+                exit_input_error_predict(total+1);
 
 			++i;
 		}
@@ -156,7 +159,7 @@ void predict(FILE *input, FILE *output)
 		free(prob_estimates);
 }
 
-void exit_with_help()
+void exit_with_help_predict()
 {
 	printf(
 	"Usage: svm-predict [options] test_file model_file output_file\n"
@@ -167,7 +170,7 @@ void exit_with_help()
 	exit(1);
 }
 
-int main(int argc, char **argv)
+int svm_predict_main(int argc, char **argv)
 {
 	FILE *input, *output;
 	int i;
@@ -182,17 +185,17 @@ int main(int argc, char **argv)
 				predict_probability = atoi(argv[i]);
 				break;
 			case 'q':
-				info = &print_null;
+                info = &print_null_predict;
 				i--;
 				break;
 			default:
 				fprintf(stderr,"Unknown option: -%c\n", argv[i-1][1]);
-				exit_with_help();
+                exit_with_help_predict();
 		}
 	}
 
 	if(i>=argc-2)
-		exit_with_help();
+        exit_with_help_predict();
 
 	input = fopen(argv[i],"r");
 	if(input == NULL)

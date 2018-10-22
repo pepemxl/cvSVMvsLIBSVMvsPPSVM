@@ -23,8 +23,8 @@ struct svm_node{
  * Struct
 */
 struct svm_problem{
-	int l;
-	double *y;
+    int l; //!< Number of training vectors in $\math{b}{R}^{n}$
+    double *y; //!< Vector with corresponding values, i.e., fir C-SVC $y_{i}\in {-1,1}$
 	struct svm_node **x;
 };
 

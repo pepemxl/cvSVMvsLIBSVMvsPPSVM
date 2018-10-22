@@ -8,7 +8,7 @@
 
 void print_null(const char *s) {}
 
-void exit_with_help()
+void exit_with_help2()
 {
 	printf(
 	"Usage: svm-train [options] training_set_file [model_file]\n"
@@ -80,7 +80,7 @@ static char* readline(FILE *input)
 	return line;
 }
 
-int main(int argc, char **argv)
+int svm_train_main(int argc, char **argv)
 {
 	char input_file_name[1024];
 	char model_file_name[1024];

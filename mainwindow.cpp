@@ -7,6 +7,35 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setFlagPython(false);
+    this->setMinimumWidth(1520);
+    this->setMinimumHeight(480+240);
+    this->setMaximumHeight(480+240);
+    this->setStyleSheet(QString::fromStdString("background-color: #505050;"));
+    this->ptrPanoramicVideoLabel = new MyLabel(this);
+    this->ptrPanoramicVideoLabel->setText(QString::fromStdString("Panorámica"));
+    this->ptrPanoramicVideoLabel->setId(1);
+    this->ptrPanoramicVideoLabel->setAlignment(Qt::AlignLeft);
+    this->ptrPanoramicVideoLabel->setAlignment(Qt::AlignTop);
+    this->ptrPanoramicVideoLabel->setStyleSheet(QString::fromStdString("background-color: #282828; border: 2px solid #464646;"));
+    this->ptrPanoramicVideoLabel->setMinimumWidth(1280);
+    this->ptrPanoramicVideoLabel->setMinimumHeight(240);
+    this->ptrPanoramicVideoLabel->setMaximumWidth(1280);
+    this->ptrPanoramicVideoLabel->setMaximumHeight(240);
+    this->ptrTVVideoLabel = new MyLabel(this);
+    this->ptrTVVideoLabel->setText(QString::fromStdString("TV"));
+    this->ptrTVVideoLabel->setId(1);
+    this->ptrTVVideoLabel->setAlignment(Qt::AlignLeft);
+    this->ptrTVVideoLabel->setAlignment(Qt::AlignTop);
+    this->ptrTVVideoLabel->setStyleSheet(QString::fromStdString("background-color: #282828; border: 2px solid #464646;"));
+    this->ptrTVVideoLabel->setMinimumWidth(640);
+    this->ptrTVVideoLabel->setMinimumHeight(480);
+    this->ptrTVVideoLabel->setMaximumWidth(640);
+    this->ptrTVVideoLabel->setMaximumHeight(480);
+    ui->horizontalLayoutPanoramica->addWidget(this->ptrPanoramicVideoLabel);
+    ui->horizontalLayoutTV->addWidget(this->ptrTVVideoLabel);
+    ui->horizontalLayoutTV->addStretch();
+    this->setCurrentSingleFramePanoramic(0);
+    this->setCurrentSingleChunkPanoramic(0);
 }
 
 MainWindow::~MainWindow()
@@ -86,8 +115,7 @@ void MainWindow::on_pushButton_clicked()
     printf("HOLA %%");
 }
 
-void MainWindow::on_pushButton_2_clicked()
-{
+void MainWindow::on_pushButton_2_clicked(){
     int labels[4] = {1, -1, -1, -1};
     float trainingData[4][2] = { {501, 10}, {255, 10}, {501, 255}, {10, 501} };
     Mat trainingDataMat(4, 2, CV_32F, trainingData);
@@ -127,7 +155,24 @@ void MainWindow::on_pushButton_2_clicked()
     waitKey(0);
 }
 
-void MainWindow::on_pushButton_3_clicked()
-{
+//def hoggify(path,extension,is_color):
+//    data=[]
+//    lista=glob.glob(os.path.join(path,"*"+extension))
+//    lista=np.squeeze(lista)
+//    for file in lista:
+//        image = cv2.cv2.imread(file, is_color)
+//        dim = 128
+//        img = cv2.cv2.resize(image, (dim,dim), interpolation = cv2.cv2.INTER_AREA)
+//        img = hogcv2.compute(img)
+//        img = np.squeeze(img)
+//        data.append(img)
+//    return data
 
+void MainWindow::on_pushButton_3_clicked(){
+    QString fileDir;
+   //fileDir =  QFileDialog::getExistingDirectory(this, tr("Selecciona Folder de salida"), QDir::currentPath(), tr("Folders"));
+   fileDir = QFileDialog::getExistingDirectory(this,QString::fromStdString("Selecciona folder de salida"),QDir::currentPath(),QFileDialog::ShowDirsOnly);
+   this->setCurrentOutputPath(fileDir.toStdString());
+   this->setFlagUbicationDefined(true);
+   this->updateLabelCurrentOutputPath();
 }

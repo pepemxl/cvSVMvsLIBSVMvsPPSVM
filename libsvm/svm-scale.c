@@ -39,7 +39,7 @@ void output(int index, double value);
 char* readline(FILE *input);
 int clean_up(FILE *fp_restore, FILE *fp, const char *msg);
 
-int main(int argc,char **argv)
+int svm_scale_main(int argc,char **argv)
 {
 	int i,index;
 	FILE *fp, *fp_restore = NULL;
