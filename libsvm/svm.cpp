@@ -19,41 +19,54 @@ template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 #ifndef max
 template <class T> static inline T max(T x,T y) { return (x>y)?x:y; }
 #endif
-template <class T> static inline void swap(T& x, T& y) { 
-	T t=x; x=y; y=t; 
-}
+
 /**
- * \brief 
+ * \brief A simple swap.
+ *
+ */
+template <class T> static inline void swap(T &x, T &y){
+    T t=x;
+    x=y;
+    y=t;
+}
+
+/**
+ * \brief Clone function to clone the first n elements from class S to class T.
  * 
  */ 
-template <class S, class T> static inline void clone(T*& dst, S* src, int n){
+template <class S, class T> static inline void clone(T* &dst, S* src, int n){
 	dst = new T[n];
 	memcpy((void *)dst,(void *)src,sizeof(T)*n);
 }
-static inline double powi(double base, int times)
-{
-	double tmp = base, ret = 1.0;
 
-	for(int t=times; t>0; t/=2)
-	{
+/**
+ * \brief Function inline that compute powers.
+ *  [in] base
+ *  [in] times
+ *
+ */
+static inline double powi(double base, int times){
+	double tmp = base, ret = 1.0;
+	for(int t=times; t>0; t/=2){
 		if(t%2==1) ret*=tmp;
 		tmp = tmp * tmp;
 	}
 	return ret;
 }
+
 #define INF HUGE_VAL
 #define TAU 1e-12
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
-static void print_string_stdout(const char *s)
-{
+static void print_string_stdout(const char *s){
 	fputs(s,stdout);
 	fflush(stdout);
 }
+
 static void (*svm_print_string) (const char *) = &print_string_stdout;
+
 #if 1
-static void info(const char *fmt,...)
-{
+static void info(const char *fmt,...){
 	char buf[BUFSIZ];
 	va_list ap;
 	va_start(ap,fmt);
@@ -62,7 +75,9 @@ static void info(const char *fmt,...)
 	(*svm_print_string)(buf);
 }
 #else
-static void info(const char *fmt,...) {}
+static void info(const char *fmt,...) {
+
+}
 #endif
 
 //
@@ -71,8 +86,7 @@ static void info(const char *fmt,...) {}
 // l is the number of total data items
 // size is the cache size limit in bytes
 //
-class Cache
-{
+class Cache{
 public:
 	Cache(int l,long int size);
 	~Cache();
@@ -85,8 +99,7 @@ public:
 private:
 	int l;
 	long int size;
-	struct head_t
-	{
+	struct head_t{
 		head_t *prev, *next;	// a circular list
 		Qfloat *data;
 		int len;		// data[0,len) is cached in this entry
@@ -98,8 +111,7 @@ private:
 	void lru_insert(head_t *h);
 };
 
-Cache::Cache(int l_,long int size_):l(l_),size(size_)
-{
+Cache::Cache(int l_,long int size_):l(l_),size(size_){
 	head = (head_t *)calloc(l,sizeof(head_t));	// initialized to 0
 	size /= sizeof(Qfloat);
 	size -= l * sizeof(head_t) / sizeof(Qfloat);
@@ -107,22 +119,19 @@ Cache::Cache(int l_,long int size_):l(l_),size(size_)
 	lru_head.next = lru_head.prev = &lru_head;
 }
 
-Cache::~Cache()
-{
+Cache::~Cache(){
 	for(head_t *h = lru_head.next; h != &lru_head; h=h->next)
 		free(h->data);
 	free(head);
 }
 
-void Cache::lru_delete(head_t *h)
-{
+void Cache::lru_delete(head_t *h){
 	// delete from current location
 	h->prev->next = h->next;
 	h->next->prev = h->prev;
 }
 
-void Cache::lru_insert(head_t *h)
-{
+void Cache::lru_insert(head_t *h){
 	// insert to last position
 	h->next = &lru_head;
 	h->prev = lru_head.prev;
@@ -130,17 +139,15 @@ void Cache::lru_insert(head_t *h)
 	h->next->prev = h;
 }
 
-int Cache::get_data(const int index, Qfloat **data, int len)
-{
+int Cache::get_data(const int index, Qfloat **data, int len){
 	head_t *h = &head[index];
-	if(h->len) lru_delete(h);
+    if(h->len){
+        lru_delete(h);
+    }
 	int more = len - h->len;
-
-	if(more > 0)
-	{
+	if(more > 0){
 		// free old space
-		while(size < more)
-		{
+		while(size < more){
 			head_t *old = lru_head.next;
 			lru_delete(old);
 			free(old->data);
@@ -148,13 +155,11 @@ int Cache::get_data(const int index, Qfloat **data, int len)
 			old->data = 0;
 			old->len = 0;
 		}
-
 		// allocate new space
 		h->data = (Qfloat *)realloc(h->data,sizeof(Qfloat)*len);
 		size -= more;
 		swap(h->len,len);
 	}
-
 	lru_insert(h);
 	*data = h->data;
 	return len;
@@ -218,7 +223,9 @@ public:
 	virtual void swap_index(int i, int j) const	// no so const...
 	{
 		swap(x[i],x[j]);
-		if(x_square) swap(x_square[i],x_square[j]);
+        if(x_square){
+            swap(x_square[i],x_square[j]);
+        }
 	}
 protected:
 

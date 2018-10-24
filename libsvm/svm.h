@@ -28,8 +28,17 @@ struct svm_problem{
 	struct svm_node **x;
 };
 
-enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };	/** Enum to save distint SVM formulation names (svm_type)*/
-enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED }; /** Enum to save distinct kernel types */
+/** Enum to save distint SVM formulation names (svm_type)*/
+enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };
+/** Enum to save distinct kernel types
+ * linear:      $K(x_{i},x_{j}) = x_{i}^{T}x_{j}$.
+ * polynomial:  $K(x_{i},x_{j}) = \left(\gamma x_{i}^{T}x_{j}+r\right)^{d}, \gamma > 0$.
+ * radial basis function (RBF): $K(x_{i},x_{j}) = exp(-\gamma ||x_{i}-x_{j}||^{2}), \gamma > 0$.
+ * sigmoid:     $K(x_{i},x_{j}) = tanh(\gamma x_{i}^{T}x_{j}+r)$.
+ * precomputed:
+ * $\gamma,r,$ and $d$ are kernel parameters.
+*/
+enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED };
 
 
 /**
@@ -43,23 +52,22 @@ enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED }; /** Enum to save distinct kern
  *
 */
 struct svm_parameter{
-	int svm_type;
-	int kernel_type;
-	int degree;	/* for poly */
-	double gamma;	/* for poly/rbf/sigmoid */
-	double coef0;	/* for poly/sigmoid */
-
+    int     svm_type;
+    int     kernel_type;
+    int     degree;         /* for poly , in opencv use a double*/
+    double  gamma;          /* for poly/rbf/sigmoid */
+    double  coef0;          /* for poly/sigmoid */
 	/* these are for training only */
-	double cache_size; /* in MB */
-	double eps;	/* stopping criteria */
-	double C;	/* for C_SVC, EPSILON_SVR and NU_SVR */
-	int nr_weight;		/* for C_SVC */
-	int *weight_label;	/* for C_SVC */
-	double* weight;		/* for C_SVC */
-	double nu;	/* for NU_SVC, ONE_CLASS, and NU_SVR */
-	double p;	/* for EPSILON_SVR */
-	int shrinking;	/* use the shrinking heuristics */
-	int probability; /* do probability estimates */
+    double  cache_size;     /* in MB */
+    double  eps;            /* stopping criteria */
+    double  C;              /* for C_SVC, EPSILON_SVR and NU_SVR, C > 0 is the penalty parameter of the error term */
+    int     nr_weight;		/* for C_SVC */
+    int     *weight_label;	/* for C_SVC */
+    double  *weight;		/* for C_SVC */
+    double  nu;             /* for NU_SVC, ONE_CLASS, and NU_SVR */
+    double  p;              /* for EPSILON_SVR */
+    int     shrinking;      /* use the shrinking heuristics */
+    int     probability;    /* do probability estimates */
 };
 
 /**

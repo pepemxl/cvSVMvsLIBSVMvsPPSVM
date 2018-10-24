@@ -48,11 +48,13 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
-#include <opencv2/objdetect/objdetect.hpp> //<!Probando
+#include <opencv2/core/cuda.hpp>//!< Probando
+#include <opencv2/objdetect/objdetect.hpp> //!< Probando
 #include <opencv2/cudaobjdetect.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/cudaobjdetect.hpp> //!< Probando
 #include <opencv2/videoio.hpp>
 #include <opencv2/ml.hpp>
 #include <omp.h>
@@ -61,6 +63,7 @@
 
 #include "mylabel.h"
 
+using namespace std;
 using namespace cv;
 using namespace cv::ml;
 
@@ -99,16 +102,67 @@ public:
     std::string strFileNameGameConfig;
     std::string strGameConfigPath;
     std::string strGameId;
+    std::string currentInputPath;
     std::string currentOutputPath;
+    std::mutex mtx;
+    QStringList qslValidExtensions;
     bool getFlagPython() const;
     void setFlagPython(bool value);
 
+    bool getFlagUbicationDefined() const;
+    void setFlagUbicationDefined(bool value);
+
+    int getCurrentBeginingFrameTV() const;
+    void setCurrentBeginingFrameTV(int value);
+
+    int getCurrentBeginingFramePanoramic() const;
+    void setCurrentBeginingFramePanoramic(int value);
+
+    int getCurrentSingleFramePanoramic() const;
+    void setCurrentSingleFramePanoramic(int value);
+
+    int getCurrentSingleChunkPanoramic() const;
+    void setCurrentSingleChunkPanoramic(int value);
+
+    int getCurrentSingleFrameTV() const;
+    void setCurrentSingleFrameTV(int value);
+
+    int getCurrentSingleChunkTV() const;
+    void setCurrentSingleChunkTV(int value);
+
+    std::string getStrFileNamePanoramic() const;
+    void setStrFileNamePanoramic(const std::string &value);
+
+    std::string getStrFileNameTV() const;
+    void setStrFileNameTV(const std::string &value);
+
+    std::string getStrFileNameGameConfig() const;
+    void setStrFileNameGameConfig(const std::string &value);
+
+    std::string getStrGameConfigPath() const;
+    void setStrGameConfigPath(const std::string &value);
+
+    std::string getStrGameId() const;
+    void setStrGameId(const std::string &value);
+
+    std::string getCurrentOutputPath() const;
+    void setCurrentOutputPath(const std::string &value);
+
+    std::string getCurrentInputPath() const;
+    void setCurrentInputPath(const std::string &value);
+
+    void updateVideoLabelTV();
+    void updateVideoLabelPanoramic();
+    void updateGUI();
+    void setValidExtensions();
 private slots:
     void on_pushButton_clicked();
 
     void on_pushButton_2_clicked();
 
     void on_pushButton_3_clicked();
+
+    void on_pushButton_4_clicked();
 
 private:
     Ui::MainWindow *ui;

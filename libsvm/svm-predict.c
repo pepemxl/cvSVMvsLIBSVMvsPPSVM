@@ -21,15 +21,12 @@ int predict_probability=0;
 static char *line = NULL;
 static int max_line_len;
 
-static char* readline(FILE *input)
-{
+static char* readline(FILE *input){
 	int len;
-
-	if(fgets(line,max_line_len,input) == NULL)
+    if(fgets(line,max_line_len,input) == NULL){
 		return NULL;
-
-	while(strrchr(line,'\n') == NULL)
-	{
+    }
+	while(strrchr(line,'\n') == NULL){
 		max_line_len *= 2;
 		line = (char *) realloc(line,max_line_len);
 		len = (int) strlen(line);
@@ -39,14 +36,12 @@ static char* readline(FILE *input)
 	return line;
 }
 
-void exit_input_error_predict(int line_num)
-{
+void exit_input_error_predict(int line_num){
 	fprintf(stderr,"Wrong input format at line %d\n", line_num);
 	exit(1);
 }
 
-void predict(FILE *input, FILE *output)
-{
+void predict(FILE *input, FILE *output){
 	int correct = 0;
 	int total = 0;
 	double error = 0;
@@ -57,12 +52,10 @@ void predict(FILE *input, FILE *output)
 	double *prob_estimates=NULL;
 	int j;
 
-	if(predict_probability)
-	{
+	if(predict_probability){
 		if (svm_type==NU_SVR || svm_type==EPSILON_SVR)
 			info("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=%g\n",svm_get_svr_probability(model));
-		else
-		{
+		else{
 			int *labels=(int *) malloc(nr_class*sizeof(int));
 			svm_get_labels(model,labels);
 			prob_estimates = (double *) malloc(nr_class*sizeof(double));
@@ -105,7 +98,7 @@ void predict(FILE *input, FILE *output)
 			if(val == NULL)
 				break;
 			errno = 0;
-			x[i].index = (int) strtol(idx,&endptr,10);
+            x[i].index = (int)strtol(idx,&endptr,10);
 			if(endptr == idx || errno != 0 || *endptr != '\0' || x[i].index <= inst_max_index)
                 exit_input_error_predict(total+1);
 			else
@@ -170,17 +163,14 @@ void exit_with_help_predict()
 	exit(1);
 }
 
-int svm_predict_main(int argc, char **argv)
-{
+int svm_predict_main(int argc, char **argv){
 	FILE *input, *output;
 	int i;
 	// parse options
-	for(i=1;i<argc;i++)
-	{
+	for(i=1;i<argc;i++){
 		if(argv[i][0] != '-') break;
 		++i;
-		switch(argv[i-1][1])
-		{
+		switch(argv[i-1][1]){
 			case 'b':
 				predict_probability = atoi(argv[i]);
 				break;
@@ -194,44 +184,34 @@ int svm_predict_main(int argc, char **argv)
 		}
 	}
 
-	if(i>=argc-2)
+    if(i>=argc-2){
         exit_with_help_predict();
-
+    }
 	input = fopen(argv[i],"r");
-	if(input == NULL)
-	{
+	if(input == NULL){
 		fprintf(stderr,"can't open input file %s\n",argv[i]);
 		exit(1);
 	}
-
 	output = fopen(argv[i+2],"w");
-	if(output == NULL)
-	{
+	if(output == NULL){
 		fprintf(stderr,"can't open output file %s\n",argv[i+2]);
 		exit(1);
 	}
-
-	if((model=svm_load_model(argv[i+1]))==0)
-	{
+	if((model=svm_load_model(argv[i+1]))==0){
 		fprintf(stderr,"can't open model file %s\n",argv[i+1]);
 		exit(1);
 	}
-
 	x = (struct svm_node *) malloc(max_nr_attr*sizeof(struct svm_node));
-	if(predict_probability)
-	{
-		if(svm_check_probability_model(model)==0)
-		{
+	if(predict_probability){
+		if(svm_check_probability_model(model)==0){
 			fprintf(stderr,"Model does not support probabiliy estimates\n");
 			exit(1);
 		}
-	}
-	else
-	{
-		if(svm_check_probability_model(model)!=0)
+    }else{
+        if(svm_check_probability_model(model)!=0){
 			info("Model supports probability estimates, but disabled in prediction.\n");
+        }
 	}
-
 	predict(input,output);
 	svm_free_and_destroy_model(&model);
 	free(x);

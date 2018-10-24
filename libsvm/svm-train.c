@@ -62,15 +62,12 @@ int nr_fold;
 static char *line = NULL;
 static int max_line_len;
 
-static char* readline(FILE *input)
-{
+static char* readline(FILE *input){
 	int len;
-
 	if(fgets(line,max_line_len,input) == NULL)
 		return NULL;
 
-	while(strrchr(line,'\n') == NULL)
-	{
+	while(strrchr(line,'\n') == NULL){
 		max_line_len *= 2;
 		line = (char *) realloc(line,max_line_len);
 		len = (int) strlen(line);
@@ -82,7 +79,7 @@ static char* readline(FILE *input)
 
 int svm_train_main(int argc, char **argv)
 {
-	char input_file_name[1024];
+    char input_file_name[1024];
 	char model_file_name[1024];
 	const char *error_msg;
 
@@ -114,7 +111,7 @@ int svm_train_main(int argc, char **argv)
 	free(prob.y);
 	free(prob.x);
 	free(x_space);
-	free(line);
+    free(line);
 
 	return 0;
 }
