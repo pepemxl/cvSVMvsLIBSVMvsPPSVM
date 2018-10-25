@@ -32,7 +32,8 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     libsvm/svm.h \
-    mylabel.h
+    mylabel.h \
+    libsvm/libsvm.h
 
 FORMS    += mainwindow.ui
 

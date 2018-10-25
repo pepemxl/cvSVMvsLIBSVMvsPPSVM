@@ -101,6 +101,56 @@ void MainWindow::runPythonScript(char *path,char *fileName,char *extension){
     fprintf(fout,"    f.close()\n");
 }
 
+QDir MainWindow::getDirectoryTestSet2() const
+{
+    return directoryTestSet2;
+}
+
+void MainWindow::setDirectoryTestSet2(const QDir &value)
+{
+    directoryTestSet2 = value;
+}
+
+QDir MainWindow::getDirectoryTestSet1() const
+{
+    return directoryTestSet1;
+}
+
+void MainWindow::setDirectoryTestSet1(const QDir &value)
+{
+    directoryTestSet1 = value;
+}
+
+QDir MainWindow::getDirectoryTrainSet2() const
+{
+    return directoryTrainSet2;
+}
+
+void MainWindow::setDirectoryTrainSet2(const QDir &value)
+{
+    directoryTrainSet2 = value;
+}
+
+QDir MainWindow::getDirectoryTrainSet1() const
+{
+    return directoryTrainSet1;
+}
+
+void MainWindow::setDirectoryTrainSet1(const QDir &value)
+{
+    directoryTrainSet1 = value;
+}
+
+QDir MainWindow::getDirectoryIn() const
+{
+    return directoryIn;
+}
+
+void MainWindow::setDirectoryIn(const QDir &value)
+{
+    directoryIn = value;
+}
+
 std::string MainWindow::getCurrentInputPath() const
 {
     return currentInputPath;
@@ -620,7 +670,202 @@ void MainWindow::on_pushButton_3_clicked(){
 
 }
 
+int MainWindow::getFilesInDirectory(QStringList &Files){
+    int n = 0;
+    Files.clear();
+    Files = this->directoryIn.entryList(this->qslValidExtensions,QDir::Files);
+    n = Files.length();
+    return n;
+}
+
+int MainWindow::getFilesInDirectory(QDir directory, QStringList &Files){
+    int n = 0;
+    Files.clear();
+    Files = directory.entryList(qslValidExtensions,QDir::Files);
+    n = Files.length();
+    for(int i = 0; i < n;i++){
+        QString srcFileName = directory.absolutePath()+QDir::toNativeSeparators(QString::fromStdString("/")) + Files.at(i);
+        Files[i] = srcFileName;
+    }
+    return n;
+}
+
+void MainWindow::calculateFeaturesFromInput(const string imageFilename, vector<float> &featureVector, HOGDescriptor& hog) {
+    /** for imread flags from openCV documentation,
+     * @see http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html?highlight=imread#Mat imread(const string& filename, int flags)
+     * @note If you get a compile-time error complaining about following line (esp. imread),
+     * you either do not have a current openCV version (>2.0)
+     * or the linking order is incorrect, try g++ -o openCVHogTrainer main.cpp `pkg-config --cflags --libs opencv`
+     */
+    Mat imageData = imread(imageFilename, IMREAD_GRAYSCALE);
+    if (imageData.empty()){
+        featureVector.clear();
+        printf("Error: HOG image '%s' is empty, features calculation skipped!\n", imageFilename.c_str());
+        return;
+    }
+    // Check for mismatching dimensions
+    if (imageData.cols != hog.winSize.width || imageData.rows != hog.winSize.height) {
+        //featureVector.clear();
+        printf("Error: Image '%s' dimensions (%u x %u) do not match HOG window size (%u x %u)!", imageFilename.c_str(), imageData.cols, imageData.rows, hog.winSize.width, hog.winSize.height);
+        printf(" Image will be resized\n");
+        cv::resize(imageData,imageData,Size(128,128));
+        //return;
+    }
+    vector<Point> locations;
+    hog.compute(imageData, featureVector, winStride, trainingPadding, locations);
+    imageData.release(); // Release the image again after features are extracted
+}
+
+static string toLowerCase(const string& in) {
+    string t;
+    for (string::const_iterator i = in.begin(); i != in.end(); ++i) {
+        t += tolower(*i);
+    }
+    return t;
+}
+
+static void storeCursor(void) {
+    printf("\033[s");
+}
+
+static void resetCursor(void) {
+    printf("\033[u");
+}
+
+/**
+ * Saves the given descriptor vector to a file
+ * @param descriptorVector the descriptor vector to save
+ * @param _vectorIndices contains indices for the corresponding vector values (e.g. descriptorVector(0)=3.5f may have index 1)
+ * @param fileName
+ * @TODO Use _vectorIndices to write correct indices
+ */
+static void saveDescriptorVectorToFile(vector<float>& descriptorVector, vector<unsigned int>& _vectorIndices, string fileName) {
+    // COMENTAR para aplicacion
+    //printf("Saving descriptor vector to file '%s'\n", fileName.c_str());
+    string separator = " "; // Use blank as default separator between single features
+    fstream File;
+    float percent;
+    File.open(fileName.c_str(), ios::out);
+    if (File.good() && File.is_open()) {
+        // COMENTAR para aplicacion
+        //printf("Saving %lu descriptor vector features:\t", descriptorVector.size());
+        storeCursor();
+        for (int feature = 0; feature < descriptorVector.size(); ++feature) {
+            //COMENTAR para aplicacion
+//            if ((feature % 10 == 0) || (feature == (descriptorVector.size()-1)) ) {
+//                percent = ((1 + feature) * 100 / descriptorVector.size());
+//                printf("%4u (%3.0f%%)", feature, percent);
+//                fflush(stdout);
+//                resetCursor();
+//            }
+            File << descriptorVector.at(feature) << separator;
+        }
+        //printf("\n");
+        File << endl;
+        File.flush();
+        File.close();
+    }
+}
+
+//void MainWindow::trainSVMFromFeaturesFiles(){
+
+//}
+
 void MainWindow::on_pushButton_4_clicked(){
+    LIBSVM SVM_instancia;
+    HOGDescriptor hog;
+    hog.winSize = Size(128, 128);
+    float percent;
+    this->setDirectoryIn(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/Humanos"));
+    this->setDirectoryTrainSet1(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTrain"));
+    this->setDirectoryTrainSet2(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTrain"));
+    this->setDirectoryTestSet1(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTest"));
+    this->setDirectoryTestSet2(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTest"));
+    QStringList positiveTrainingImages;
+    QStringList negativeTrainingImages;
+    QStringList positiveTestImages;
+    QStringList negativeTestImages;
+    int nPositiveTrainingImages = this->getFilesInDirectory(this->directoryTrainSet1,positiveTrainingImages);
+    int nNegativeTrainingImages = this->getFilesInDirectory(this->directoryTrainSet2,negativeTrainingImages);
+    int nPositiveTestImages = this->getFilesInDirectory(this->directoryTestSet1,positiveTestImages);
+    int nNegativeTestImages = this->getFilesInDirectory(this->directoryTestSet2,negativeTestImages);
+    //foreach(QString filename, positiveTrainingImages) {
+    //    std::cout << filename.toStdString() << std::endl;
+    //}
+    std::cout << nPositiveTrainingImages << ",";
+    std::cout << nNegativeTrainingImages << ",";
+    std::cout << nPositiveTestImages << ",";
+    std::cout << nNegativeTestImages << std::endl;
+    string featuresFile("features.dat");
+    string svmModelFile = "svm_model.dat";
+    string descriptorVectorFile = "descriptorvector.dat";
+    string cvHOGFile = "cvHOGClassifier.yaml";
+    /*int overallSamples = nPositiveTrainingImages+nNegativeTrainingImages;
+    if(overallSamples == 0){
+        printf("No training sample files found, nothing to do!\n");
+        return;
+    }
+    fstream File;
+        File.open(featuresFile.c_str(), ios::out);
+        if (File.good() && File.is_open()) {
+            //File << "# Use this file to train, e.g. SVMlight by issuing $ svm_learn -i 1 -a weights.txt " << featuresFile.c_str() << endl; // Remove this line for libsvm which does not support comments
+            // Iterate over sample images
+            for (unsigned long currentFile = 0; currentFile < overallSamples; ++currentFile) {
+                storeCursor();
+                vector<float> featureVector;
+                // Get positive or negative sample image file path
+                QString currentImageFile = (currentFile < positiveTrainingImages.size() ? positiveTrainingImages.at(currentFile) : negativeTrainingImages.at(currentFile - positiveTrainingImages.size()));
+                // Output progress
+                if ( (currentFile+1) % 10 == 0 || (currentFile+1) == overallSamples ) {
+                    percent = ((currentFile+1) * 100 / overallSamples);
+                    printf("%5lu (%3.0f%%):\tFile '%s'", (currentFile+1), percent, currentImageFile.toStdString().c_str());
+                    fflush(stdout);
+                    resetCursor();
+                }
+                // Calculate feature vector from current image file
+                calculateFeaturesFromInput(currentImageFile.toStdString(), featureVector, hog);
+                if (!featureVector.empty()) {
+                    // Put positive or negative sample class to file,
+                    // true=positive, false=negative,
+                    // and convert positive class to +1 and negative class to -1 for SVMlight
+                    //
+                    File << ((currentFile < positiveTrainingImages.size()) ? "+1" : "-1");
+                    // Save feature vector components
+                    for (unsigned int feature = 0; feature < featureVector.size(); ++feature) {
+                        File << " " << (feature + 1) << ":" << featureVector.at(feature);
+                    }
+                    File << endl;
+                }
+            }
+            printf("\n");
+            File.flush();
+            File.close();
+        } else {
+            printf("Error opening file '%s'!\n", featuresFile.c_str());
+            return;
+        }*/
+    /// Proceso de entrenamiento
+    SVM_instancia.read_problem(const_cast<char*> (featuresFile.c_str()));
+    SVM_instancia.train();
+    SVM_instancia.saveModelToFile(svmModelFile);
+    /// Guardando features de HOG
+    vector<float> descriptorVector;
+    vector<unsigned int> descriptorVectorIndices;
+    SVM_instancia.getSingleDetectingVector(descriptorVector, descriptorVectorIndices);
+    saveDescriptorVectorToFile(descriptorVector, descriptorVectorIndices, descriptorVectorFile);
+    /// save opencv hog descriptor
+    const double hitThreshold = SVM_instancia.getThreshold();
+    std::cout << hitThreshold << std::endl;
+    // Set our custom detecting vector
+    hog.setSVMDetector(descriptorVector);
+    hog.save(cvHOGFile);
+
+    //printf("Testing training phase using training set as test set (just to check if training is ok - no detection quality conclusion with this!)\n");
+    //detectTrainingSetTest(hog, hitThreshold, positiveTrainingImages, negativeTrainingImages);
+}
+
+void MainWindow::on_pushButton_5_clicked()
+{
     int contador = 0;
     unsigned long int elapsed_nanoseconds1 = 0;
     unsigned long int elapsed_nanoseconds2 = 0;

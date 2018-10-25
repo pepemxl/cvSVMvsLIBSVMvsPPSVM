@@ -164,6 +164,7 @@ void exit_with_help_predict()
 }
 
 int svm_predict_main(int argc, char **argv){
+//int main(int argc, char **argv){
 	FILE *input, *output;
 	int i;
 	// parse options

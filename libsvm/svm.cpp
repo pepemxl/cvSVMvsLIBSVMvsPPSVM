@@ -59,8 +59,9 @@ static inline double powi(double base, int times){
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
 static void print_string_stdout(const char *s){
-	fputs(s,stdout);
-	fflush(stdout);
+    //CAMBIAR comentado para appplicacion
+    //fputs(s,stdout);
+    //fflush(stdout);
 }
 
 static void (*svm_print_string) (const char *) = &print_string_stdout;
@@ -75,7 +76,7 @@ static void info(const char *fmt,...){
 	(*svm_print_string)(buf);
 }
 #else
-static void info(const char *fmt,...) {
+static void info(const char *fmt,...){
 
 }
 #endif
@@ -104,7 +105,6 @@ private:
 		Qfloat *data;
 		int len;		// data[0,len) is cached in this entry
 	};
-
 	head_t *head;
 	head_t lru_head;
 	void lru_delete(head_t *h);
@@ -165,26 +165,32 @@ int Cache::get_data(const int index, Qfloat **data, int len){
 	return len;
 }
 
-void Cache::swap_index(int i, int j)
-{
-	if(i==j) return;
-
-	if(head[i].len) lru_delete(&head[i]);
-	if(head[j].len) lru_delete(&head[j]);
+void Cache::swap_index(int i, int j){
+    if(i==j){
+        return;
+    }
+    if(head[i].len){
+        lru_delete(&head[i]);
+    }
+    if(head[j].len){
+        lru_delete(&head[j]);
+    }
 	swap(head[i].data,head[j].data);
 	swap(head[i].len,head[j].len);
-	if(head[i].len) lru_insert(&head[i]);
-	if(head[j].len) lru_insert(&head[j]);
-
-	if(i>j) swap(i,j);
-	for(head_t *h = lru_head.next; h!=&lru_head; h=h->next)
-	{
-		if(h->len > i)
-		{
-			if(h->len > j)
+    if(head[i].len){
+        lru_insert(&head[i]);
+    }
+    if(head[j].len){
+        lru_insert(&head[j]);
+    }
+    if( i > j ){
+        swap(i,j);
+    }
+	for(head_t *h = lru_head.next; h!=&lru_head; h=h->next){
+		if(h->len > i){
+            if(h->len > j){
 				swap(h->data[i],h->data[j]);
-			else
-			{
+            }else{
 				// give up
 				lru_delete(h);
 				free(h->data);
@@ -203,7 +209,8 @@ void Cache::swap_index(int i, int j)
 // the constructor of Kernel prepares to calculate the l*l kernel matrix
 // the member function get_Q is for getting one column from the Q Matrix
 //
-class QMatrix {
+
+class QMatrix{
 public:
 	virtual Qfloat *get_Q(int column, int len) const = 0;
 	virtual double *get_QD() const = 0;
@@ -211,9 +218,9 @@ public:
 	virtual ~QMatrix() {}
 };
 
-class Kernel: public QMatrix {
+class Kernel: public QMatrix{
 public:
-	Kernel(int l, svm_node * const * x, const svm_parameter& param);
+    Kernel(int l, svm_node * const * x, const svm_parameter &param);
 	virtual ~Kernel();
 
 	static double k_function(const svm_node *x, const svm_node *y,
@@ -289,49 +296,41 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 
 	clone(x,x_,l);
 
-	if(kernel_type == RBF)
-	{
+	if(kernel_type == RBF){
 		x_square = new double[l];
-		for(int i=0;i<l;i++)
+        for(int i=0;i<l;i++){
 			x_square[i] = dot(x[i],x[i]);
-	}
-	else
+        }
+    }else{
 		x_square = 0;
+    }
 }
 
-Kernel::~Kernel()
-{
+Kernel::~Kernel(){
 	delete[] x;
 	delete[] x_square;
 }
 
-double Kernel::dot(const svm_node *px, const svm_node *py)
-{
+double Kernel::dot(const svm_node *px, const svm_node *py){
 	double sum = 0;
-	while(px->index != -1 && py->index != -1)
-	{
-		if(px->index == py->index)
-		{
+	while(px->index != -1 && py->index != -1){
+		if(px->index == py->index){
 			sum += px->value * py->value;
 			++px;
 			++py;
-		}
-		else
-		{
-			if(px->index > py->index)
+		}else{
+            if(px->index > py->index){
 				++py;
-			else
+            }else{
 				++px;
+            }
 		}
 	}
 	return sum;
 }
 
-double Kernel::k_function(const svm_node *x, const svm_node *y,
-			  const svm_parameter& param)
-{
-	switch(param.kernel_type)
-	{
+double Kernel::k_function(const svm_node *x, const svm_node *y,const svm_parameter &param){
+	switch(param.kernel_type){
 		case LINEAR:
 			return dot(x,y);
 		case POLY:
@@ -339,38 +338,29 @@ double Kernel::k_function(const svm_node *x, const svm_node *y,
 		case RBF:
 		{
 			double sum = 0;
-			while(x->index != -1 && y->index !=-1)
-			{
-				if(x->index == y->index)
-				{
+			while(x->index != -1 && y->index !=-1){
+				if(x->index == y->index){
 					double d = x->value - y->value;
 					sum += d*d;
 					++x;
 					++y;
-				}
-				else
-				{
-					if(x->index > y->index)
-					{
+				}else{
+					if(x->index > y->index){
 						sum += y->value * y->value;
 						++y;
-					}
-					else
-					{
+					}else{
 						sum += x->value * x->value;
 						++x;
 					}
 				}
 			}
 
-			while(x->index != -1)
-			{
+			while(x->index != -1){
 				sum += x->value * x->value;
 				++x;
 			}
 
-			while(y->index != -1)
-			{
+			while(y->index != -1){
 				sum += y->value * y->value;
 				++y;
 			}
@@ -437,12 +427,10 @@ protected:
 	int l;
 	bool unshrink;	// XXX
 
-	double get_C(int i)
-	{
+	double get_C(int i){
 		return (y[i] > 0)? Cp : Cn;
 	}
-	void update_alpha_status(int i)
-	{
+	void update_alpha_status(int i){
 		if(alpha[i] >= get_C(i))
 			alpha_status[i] = UPPER_BOUND;
 		else if(alpha[i] <= 0)
@@ -473,8 +461,7 @@ void Solver::swap_index(int i, int j)
 	swap(G_bar[i],G_bar[j]);
 }
 
-void Solver::reconstruct_gradient()
-{
+void Solver::reconstruct_gradient(){
 	// reconstruct inactive elements of G from G_bar and free variables
 
 	if(active_size == l) return;
@@ -517,8 +504,7 @@ void Solver::reconstruct_gradient()
 
 void Solver::Solve(int l, const QMatrix& Q, const double *p_, const schar *y_,
 		   double *alpha_, double Cp, double Cn, double eps,
-		   SolutionInfo* si, int shrinking)
-{
+		   SolutionInfo* si, int shrinking){
 	this->l = l;
 	this->Q = &Q;
 	QD=Q.get_QD();
@@ -797,8 +783,7 @@ void Solver::Solve(int l, const QMatrix& Q, const double *p_, const schar *y_,
 }
 
 // return 1 if already optimal, return 0 otherwise
-int Solver::select_working_set(int &out_i, int &out_j)
-{
+int Solver::select_working_set(int &out_i, int &out_j){
 	// return i,j such that
 	// i: maximizes -y_i * grad(f)_i, i in I_up(\alpha)
 	// j: minimizes the decrease of obj value
@@ -812,17 +797,13 @@ int Solver::select_working_set(int &out_i, int &out_j)
 	double obj_diff_min = INF;
 
 	for(int t=0;t<active_size;t++)
-		if(y[t]==+1)
-		{
+		if(y[t]==+1){
 			if(!is_upper_bound(t))
-				if(-G[t] >= Gmax)
-				{
+				if(-G[t] >= Gmax){
 					Gmax = -G[t];
 					Gmax_idx = t;
 				}
-		}
-		else
-		{
+		}else{
 			if(!is_lower_bound(t))
 				if(G[t] >= Gmax)
 				{
@@ -1683,7 +1664,7 @@ static decision_function svm_train_one(
 			break;
 	}
 
-	info("obj = %f, rho = %f\n",si.obj,si.rho);
+    info("obj = %f, rho = %f\n",si.obj,si.rho);
 
 	// output SVs
 
@@ -1707,7 +1688,7 @@ static decision_function svm_train_one(
 		}
 	}
 
-	info("nSV = %d, nBSV = %d\n",nSV,nBSV);
+    info("nSV = %d, nBSV = %d\n",nSV,nBSV);
 
 	decision_function f;
 	f.alpha = alpha;
@@ -1718,8 +1699,7 @@ static decision_function svm_train_one(
 // Platt's binary SVM Probablistic Output: an improvement from Lin et al.
 static void sigmoid_train(
 	int l, const double *dec_values, const double *labels,
-	double& A, double& B)
-{
+    double &A, double &B){
 	double prior1=0, prior0 = 0;
 	int i;
 
@@ -2682,7 +2662,6 @@ int svm_save_model(const char *model_file_name, const svm_model *model){
 	int l = model->l;
 	fprintf(fp, "nr_class %d\n", nr_class);
 	fprintf(fp, "total_sv %d\n",l);
-
 	{
 		fprintf(fp, "rho");
         for(int i=0;i<nr_class*(nr_class-1)/2;i++){

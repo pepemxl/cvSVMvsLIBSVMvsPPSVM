@@ -27,6 +27,7 @@
 #include <QHostAddress>
 #include <QHostInfo>
 #include <QNetworkInterface>
+#include <QMutableStringListIterator>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +61,7 @@
 #include <omp.h>
 
 #include <libsvm/svm.h>
+#include <libsvm/libsvm.h>
 
 #include "mylabel.h"
 
@@ -105,7 +107,23 @@ public:
     std::string currentInputPath;
     std::string currentOutputPath;
     std::mutex mtx;
+    QDir directoryIn;
+    QDir directoryTrainSet1;
+    QDir directoryTrainSet2;
+    QDir directoryTestSet1;
+    QDir directoryTestSet2;
     QStringList qslValidExtensions;
+    ///Variabls necessaries for libsvm predict
+    struct svm_model* model;
+    struct svm_node *x;
+    int predict_probability=0;
+    int max_nr_attr = 64;
+    char *line = NULL;
+    static int max_line_len;
+    constexpr static int (*info)(const char *fmt,...) = &printf;
+    Size trainingPadding = Size(0, 0);
+    Size winStride = Size(8, 8);
+
     bool getFlagPython() const;
     void setFlagPython(bool value);
 
@@ -155,6 +173,26 @@ public:
     void updateVideoLabelPanoramic();
     void updateGUI();
     void setValidExtensions();
+    char *readline(FILE *input);
+    int svm_predict_main(int argc, char **argv);
+    QDir getDirectoryIn() const;
+    void setDirectoryIn(const QDir &value);
+
+    int getFilesInDirectory(QStringList &Files);
+    QDir getDirectoryTrainSet1() const;
+    void setDirectoryTrainSet1(const QDir &value);
+
+    QDir getDirectoryTrainSet2() const;
+    void setDirectoryTrainSet2(const QDir &value);
+
+    QDir getDirectoryTestSet1() const;
+    void setDirectoryTestSet1(const QDir &value);
+
+    QDir getDirectoryTestSet2() const;
+    void setDirectoryTestSet2(const QDir &value);
+
+    int getFilesInDirectory(QDir directory, QStringList &Files);
+    void calculateFeaturesFromInput(const string  imageFilename, vector<float> &featureVector, HOGDescriptor &hog);
 private slots:
     void on_pushButton_clicked();
 
@@ -163,6 +201,8 @@ private slots:
     void on_pushButton_3_clicked();
 
     void on_pushButton_4_clicked();
+
+    void on_pushButton_5_clicked();
 
 private:
     Ui::MainWindow *ui;
