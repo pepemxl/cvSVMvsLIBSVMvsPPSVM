@@ -193,6 +193,8 @@ public:
 
     int getFilesInDirectory(QDir directory, QStringList &Files);
     void calculateFeaturesFromInput(const string  imageFilename, vector<float> &featureVector, HOGDescriptor &hog);
+    void detectTrainingSetTest(const HOGDescriptor &hog, const double hitThreshold, QStringList &posFileNames, QStringList &negFileNames);
+    void detectTest(const HOGDescriptor &hog, const double hitThreshold, Mat &imageData);
 private slots:
     void on_pushButton_clicked();
 
@@ -203,6 +205,10 @@ private slots:
     void on_pushButton_4_clicked();
 
     void on_pushButton_5_clicked();
+
+    void on_pushButton_6_clicked();
+
+    void on_pushButton_7_clicked();
 
 private:
     Ui::MainWindow *ui;
