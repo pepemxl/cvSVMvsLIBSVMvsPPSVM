@@ -706,7 +706,7 @@ void MainWindow::calculateFeaturesFromInput(const string imageFilename, vector<f
     // Check for mismatching dimensions
     if (imageData.cols != hog.winSize.width || imageData.rows != hog.winSize.height) {
         //featureVector.clear();
-        printf("Error: Image '%s' dimensions (%u x %u) do not match HOG window size (%u x %u)!", imageFilename.c_str(), imageData.cols, imageData.rows, hog.winSize.width, hog.winSize.height);
+        printf("Warn: Image '%s' dimensions (%u x %u) do not match HOG window size (%u x %u)!", imageFilename.c_str(), imageData.cols, imageData.rows, hog.winSize.width, hog.winSize.height);
         printf(" Image will be resized\n");
         cv::resize(imageData,imageData,Size(128,128));
         //return;
@@ -1095,6 +1095,23 @@ void MainWindow::on_pushButton_6_clicked()
 
 void MainWindow::on_pushButton_7_clicked()
 {
+    int contador = 0;
+    unsigned long int elapsed_nanoseconds1 = 0;
+    unsigned long int elapsed_nanoseconds2 = 0;
+    unsigned long int elapsed_useconds1 = 0;
+    unsigned long int elapsed_useconds2 = 0;
+    unsigned long int total_elapsed_nanoseconds1 = 0;
+    unsigned long int total_elapsed_nanoseconds2 = 0;
+    unsigned long int total_elapsed_useconds1 = 0;
+    unsigned long int total_elapsed_useconds2 = 0;
+    double mean_elapsed_nanoseconds1 = 0;
+    double mean_elapsed_nanoseconds2 = 0;
+    std::chrono::duration<double, std::nano> elapsed1;
+    std::chrono::duration<double, std::nano> elapsed2;
+    //auto startChrono = std::chrono::steady_clock::now();
+    auto startChrono = std::chrono::system_clock::now();
+    //auto endChrono = std::chrono::steady_clock::now();
+    auto endChrono = std::chrono::system_clock::now();
     LIBSVM SVM_instancia;
     HOGDescriptor hog;
     hog.winSize = Size(128, 128);
@@ -1129,7 +1146,6 @@ void MainWindow::on_pushButton_7_clicked()
         return;
     }
     SVM_instancia.loadModelFromFile(svmModelFile);
-    SVM_instancia.predictLabel();
     // Guardando features de HOG
     vector<float> descriptorVector;
     vector<unsigned int> descriptorVectorIndices;
@@ -1138,9 +1154,46 @@ void MainWindow::on_pushButton_7_clicked()
     /// save opencv hog descriptor
     const double hitThreshold = SVM_instancia.getThreshold();
     std::cout << hitThreshold << std::endl;
-    // Set our custom detecting vector
-    hog.setSVMDetector(descriptorVector);
-    ///hog.save(cvHOGFile);
-    /// ///  detect
-    detectTrainingSetTest(hog, hitThreshold, positiveTrainingImages, negativeTrainingImages);
+    /// Prediction
+    vector<float> featureVector;
+    for(int i = 0 ;i < positiveTestImages.size();++i){
+        QString currentImageFile = positiveTestImages.at(i);
+        //QString currentImageFile = negativeTestImages.at(0);
+        //startChrono = std::chrono::steady_clock::now();
+        startChrono = std::chrono::system_clock::now();
+        calculateFeaturesFromInput(currentImageFile.toStdString(), featureVector, hog);
+        //usleep(100000);
+        //endChrono = std::chrono::steady_clock::now();
+        endChrono = std::chrono::system_clock::now();
+        elapsed1 = endChrono-startChrono;
+        elapsed_nanoseconds1 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed1).count();
+        elapsed_useconds1 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed1).count();
+        total_elapsed_nanoseconds1 += elapsed_nanoseconds1;
+        total_elapsed_useconds1 += elapsed_useconds1;
+        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
+        this->x = (struct svm_node *)malloc(featureVector.size()*sizeof(struct svm_node));
+        startChrono = std::chrono::system_clock::now();
+        for(int j=0;j < featureVector.size();++j){
+            this->x[j].value = featureVector[j];
+            this->x[j].index = j+1;
+        }
+        double valueProbEstimate = 0;
+        int classification = 0;
+        classification = SVM_instancia.predictLabel(this->x,&valueProbEstimate);
+        endChrono = std::chrono::system_clock::now();
+        elapsed2 = endChrono-startChrono;
+        elapsed_nanoseconds2 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed2).count();
+        elapsed_useconds2 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed2).count();
+        total_elapsed_nanoseconds2 += elapsed_nanoseconds2;
+        total_elapsed_useconds2 += elapsed_useconds2;
+        free(this->x);
+        std::cout << "Corrida" << i << ": " <<  classification << std::endl;
+        std::cout << "Probabilidad: " << valueProbEstimate << std::endl;
+        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
+        //std::cout << "Tiempo Calculo SVM: " << elapsed_nanoseconds2 << std::endl;
+        contador++;
+    }
+    std::cout << "Tiempo Calculo Features: " << total_elapsed_useconds1/(double)contador << std::endl;
+    std::cout << "Tiempo Calculo SVM: " << total_elapsed_useconds2/(double)contador  << std::endl;
+    fflush(stdout);
 }

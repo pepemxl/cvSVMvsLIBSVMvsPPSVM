@@ -281,12 +281,9 @@ public:
         return this->prob;
     }
 
-    float predictLabel(svm_node* _sample, double* _probEstimate) {
+    float predictLabel(svm_node* _sample, double* _probEstimate){
         float predict_label = svm_predict_probability(model, _sample, _probEstimate);
-//printf("Predict function after pred 2nd svm_node value: %3.6f\n", _sample[1].value);
-//        printf("Probability estimates: %+1.2f, %1.2f\n", _probEstimate[0], _probEstimate[1]);
         return predict_label;
-//        return svm_predict(model, _sample);
     }
 
     /**
