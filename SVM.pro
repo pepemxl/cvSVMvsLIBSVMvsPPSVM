@@ -33,7 +33,9 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     libsvm/svm.h \
     mylabel.h \
-    libsvm/libsvm.h
+    libsvm/libsvm.h \
+    helper_cuda.h \
+    helper_string.h
 
 FORMS    += mainwindow.ui
 
@@ -42,6 +44,7 @@ QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 
 CUDA_SOURCES += ./svmCUDA.cu
+CUDA_SOURCES += ./cudasvm.cu
 
 CUDA_SDK = "/usr/local/cuda-8.0/"   # Path to cuda SDK install
 CUDA_DIR = "/usr/local/cuda-8.0/"            # Path to cuda toolkit install
