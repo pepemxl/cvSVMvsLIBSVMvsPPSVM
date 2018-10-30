@@ -8,7 +8,7 @@
 #include "helper_cuda.h"
 #include "libsvm/svm.h"
 
-// for get_Q()
+//!< for get_Q()
 struct svm_node** d_x = NULL;
 double *d_x_square = NULL;
 signed char* d_y = NULL;
@@ -17,9 +17,9 @@ __constant__ __device__ struct svm_parameter d_svm_parameter;
 __constant__ __device__ struct svm_node* d_x_space;
 __constant__ __device__ struct svm_node* host_x_space;
 
-// for CUDA_k_function()
+//!< for CUDA_k_function()
 svm_node** d_SV = NULL;
-double* d_output;
+double *d_output;
 __constant__ __device__ struct svm_parameter d_model_parameter;
 
 __device__ double dot(const svm_node *px, const svm_node *py){
@@ -39,7 +39,9 @@ __device__ double dot(const svm_node *px, const svm_node *py){
     }
     return sum;
 }
+/** \brief
 
+*/
 __device__ static double powi(double base, int times){
     double tmp = base, ret = 1.0;
     for(int t=times; t>0; t/=2){

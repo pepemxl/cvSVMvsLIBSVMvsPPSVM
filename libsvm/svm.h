@@ -71,7 +71,7 @@ struct svm_parameter{
 };
 
 /**
- * svm_model (for quadratic minimization problems)
+ * @brief svm_model (for quadratic minimization problems)
  * C-support vector classification C-SVC
  * $\nu$-support vector classificaction  $\nu$-SVC
  * Distribution estimation one-class SVM

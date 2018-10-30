@@ -1,33 +1,40 @@
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include <ctype.h>
 #include <float.h>
-#include <string.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <locale.h>
 #include "svm.h"
 
+/** Declaration of function CUDA to init a SVM model */
 void CUDA_init_model(const struct svm_node* x_space, int problen);
+/** Declaration of function CUDA to free device memory of SVM model */
 void CUDA_uninit_model();
 void CUDA_init_SVC_Q(int problen, const struct svm_node** x, const signed char* y, double* x_square, const svm_parameter& svm_parameter);
 void CUDA_uninit_SVC_Q();
+/** Declaration of cuda function to get Q */
 void CUDA_get_Q(int x, int starty, int endy, float* output);
+/** Declaration of cuda function to compute kernel of SVM */
 void CUDA_k_function(svm_node** SV, int modellen, const svm_parameter& param, const svm_node *x, double* output);
+/** Declaration of function CUDA to free device memory of kernels on SVM model */
 void CUDA_k_function_cleanup();
-
-
 
 int libsvm_version = LIBSVM_VERSION;
 
 typedef float Qfloat;
 typedef signed char schar;
 #ifndef min
-template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
+template <class T> static inline T min(T x,T y){
+    return (x<y)?x:y;
+}
 #endif
 #ifndef max
-template <class T> static inline T max(T x,T y) { return (x>y)?x:y; }
+template <class T> static inline T max(T x,T y){
+    return (x>y)?x:y;
+}
 #endif
 
 /**
@@ -56,10 +63,13 @@ template <class S, class T> static inline void clone(T* &dst, S* src, int n){
  *
  */
 static inline double powi(double base, int times){
-	double tmp = base, ret = 1.0;
-	for(int t=times; t>0; t/=2){
-		if(t%2==1) ret*=tmp;
-		tmp = tmp * tmp;
+    double tmp = base;
+    double ret = 1.0;
+    for(int t = times; t > 0; t /= 2){
+        if(t%2 == 1){
+            ret *= tmp;
+        }
+        tmp = tmp*tmp;
 	}
 	return ret;
 }
@@ -68,6 +78,8 @@ static inline double powi(double base, int times){
 #define TAU 1e-12
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
+/** Por el momento desactivate esta funcion para poder revisar el rendimiento
+de la función sin considerar avisos a pantalla. */
 static void print_string_stdout(const char *s){
     //CAMBIAR comentado para appplicacion
     //fputs(s,stdout);
@@ -91,12 +103,12 @@ static void info(const char *fmt,...){
 }
 #endif
 
-//
-// Kernel Cache
-//
-// l is the number of total data items
-// size is the cache size limit in bytes
-//
+/**
+ * \brief Kernel Cache
+ *
+ * l is the number of total data items
+ * size is the cache size limit in bytes
+*/
 class Cache{
 public:
 	Cache(int l,long int size);
@@ -120,7 +132,12 @@ private:
 	void lru_delete(head_t *h);
 	void lru_insert(head_t *h);
 };
-
+/**
+ * @brief      Constructs the object.
+ *
+ * @param[in]  l_     { parameter_description }
+ * @param[in]  size_  The size
+ */
 Cache::Cache(int l_,long int size_):l(l_),size(size_){
 	head = (head_t *)calloc(l,sizeof(head_t));	// initialized to 0
 	size /= sizeof(Qfloat);
@@ -128,27 +145,43 @@ Cache::Cache(int l_,long int size_):l(l_),size(size_){
 	size = max(size, 2 * (long int) l);	// cache must be large enough for two columns
 	lru_head.next = lru_head.prev = &lru_head;
 }
-
+/**
+ * @brief      Destroys the object.
+ */
 Cache::~Cache(){
 	for(head_t *h = lru_head.next; h != &lru_head; h=h->next)
 		free(h->data);
 	free(head);
 }
-
+/**
+ * @brief      Delete lru from current location.
+ *
+ * @param      h     { Head }
+ */
 void Cache::lru_delete(head_t *h){
-	// delete from current location
 	h->prev->next = h->next;
 	h->next->prev = h->prev;
 }
-
+/**
+ * @brief      { Insert to last position }
+ *
+ * @param      h     { Head }
+ */
 void Cache::lru_insert(head_t *h){
-	// insert to last position
 	h->next = &lru_head;
 	h->prev = lru_head.prev;
 	h->prev->next = h;
 	h->next->prev = h;
 }
-
+/**
+ * @brief      Gets the data.
+ *
+ * @param[in]  index  The index
+ * @param      data   The data
+ * @param[in]  len    The length
+ *
+ * @return     The data.
+ */
 int Cache::get_data(const int index, Qfloat **data, int len){
 	head_t *h = &head[index];
     if(h->len){
@@ -174,7 +207,12 @@ int Cache::get_data(const int index, Qfloat **data, int len){
 	*data = h->data;
 	return len;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  i     { parameter_description }
+ * @param[in]  j     { parameter_description }
+ */
 void Cache::swap_index(int i, int j){
     if(i==j){
         return;
@@ -212,14 +250,14 @@ void Cache::swap_index(int i, int j){
 	}
 }
 
-//
-// Kernel evaluation
-//
-// the static method k_function is for doing single kernel evaluation
-// the constructor of Kernel prepares to calculate the l*l kernel matrix
-// the member function get_Q is for getting one column from the Q Matrix
-//
-
+/**
+ * @brief      Class for quarter matrix.
+ *
+ * Kernel evaluation
+ * the static method k_function is for doing single kernel evaluation
+ * the constructor of Kernel prepares to calculate the l*l kernel matrix
+ * the member function get_Q is for getting one column from the Q Matrix
+ */
 class QMatrix{
 public:
 	virtual Qfloat *get_Q(int column, int len) const = 0;
@@ -228,6 +266,9 @@ public:
 	virtual ~QMatrix() {}
 };
 
+/**
+ * @brief      Class for kernel.
+ */
 class Kernel: public QMatrix{
 public:
     Kernel(int l, svm_node * const * x, const svm_parameter &param);
@@ -281,6 +322,13 @@ private:
 	}
 };
 
+/**
+ * @brief      Constructs the object.
+ *
+ * @param[in]  l      { parameter_description }
+ * @param      x_     { parameter_description }
+ * @param[in]  param  The parameter
+ */
 Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 :kernel_type(param.kernel_type), degree(param.degree),
  gamma(param.gamma), coef0(param.coef0)
@@ -316,11 +364,21 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
     }
 }
 
+/**
+ * @brief      Destroys the object.
+ */
 Kernel::~Kernel(){
 	delete[] x;
 	delete[] x_square;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  px    { parameter_description }
+ * @param[in]  py    { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
 double Kernel::dot(const svm_node *px, const svm_node *py){
 	double sum = 0;
 	while(px->index != -1 && py->index != -1){
@@ -338,7 +396,15 @@ double Kernel::dot(const svm_node *px, const svm_node *py){
 	}
 	return sum;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  x      { parameter_description }
+ * @param[in]  y      { parameter_description }
+ * @param[in]  param  The parameter
+ *
+ * @return     { description_of_the_return_value }
+ */
 double Kernel::k_function(const svm_node *x, const svm_node *y,const svm_parameter &param){
 	switch(param.kernel_type){
 		case LINEAR:
@@ -385,25 +451,27 @@ double Kernel::k_function(const svm_node *x, const svm_node *y,const svm_paramet
 			return 0;  // Unreachable
 	}
 }
-
-// An SMO algorithm in Fan et al., JMLR 6(2005), p. 1889--1918
-// Solves:
-//
-//	min 0.5(\alpha^T Q \alpha) + p^T \alpha
-//
-//		y^T \alpha = \delta
-//		y_i = +1 or -1
-//		0 <= alpha_i <= Cp for y_i = 1
-//		0 <= alpha_i <= Cn for y_i = -1
-//
-// Given:
-//
-//	Q, p, y, Cp, Cn, and an initial feasible point \alpha
-//	l is the size of vectors and matrices
-//	eps is the stopping tolerance
-//
-// solution will be put in \alpha, objective value will be put in obj
-//
+/**
+ * @brief      Class for solver.
+ * An SMO algorithm in Fan et al., JMLR 6(2005), p. 1889--1918
+ * Solves:
+ *
+ *	$min 0.5(\alpha^T Q \alpha) + p^T \alpha$
+ *
+ *		$$y^T \alpha = \delta$$
+ *		$$y_i = +1 or -1$$
+ *		$$0 <= alpha_i <= Cp for y_i = 1$$
+ *		$$0 <= alpha_i <= Cn for y_i = -1$$
+ *
+ * Given:
+ *
+ *	$Q, p, y, Cp, Cn$, and an initial feasible point $$\alpha$$
+ *	$l$ is the size of vectors and matrices
+ *	eps is the stopping tolerance
+ *
+ * solution will be put in $\alpha$, objective value will be put in obj
+ *
+ */
 class Solver {
 public:
 	Solver() {};
@@ -459,6 +527,12 @@ private:
 	bool be_shrunk(int i, double Gmax1, double Gmax2);
 };
 
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  i     { parameter_description }
+ * @param[in]  j     { parameter_description }
+ */
 void Solver::swap_index(int i, int j)
 {
 	Q->swap_index(i,j);
@@ -470,7 +544,9 @@ void Solver::swap_index(int i, int j)
 	swap(active_set[i],active_set[j]);
 	swap(G_bar[i],G_bar[j]);
 }
-
+/**
+ * @brief      { function_description }
+ */
 void Solver::reconstruct_gradient(){
 	// reconstruct inactive elements of G from G_bar and free variables
 
@@ -511,7 +587,20 @@ void Solver::reconstruct_gradient(){
 			}
 	}
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  l          { parameter_description }
+ * @param[in]  Q          The quarter
+ * @param[in]  p_         { parameter_description }
+ * @param[in]  y_         { parameter_description }
+ * @param      alpha_     The alpha
+ * @param[in]  Cp         { parameter_description }
+ * @param[in]  Cn         { parameter_description }
+ * @param[in]  eps        The eps
+ * @param      si         { parameter_description }
+ * @param[in]  shrinking  The shrinking
+ */
 void Solver::Solve(int l, const QMatrix& Q, const double *p_, const schar *y_,
 		   double *alpha_, double Cp, double Cn, double eps,
 		   SolutionInfo* si, int shrinking){
@@ -793,6 +882,15 @@ void Solver::Solve(int l, const QMatrix& Q, const double *p_, const schar *y_,
 }
 
 // return 1 if already optimal, return 0 otherwise
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      out_i  The out i
+ * @param      out_j  The out j
+ *
+ * @return     { description_of_the_return_value }
+ */
 int Solver::select_working_set(int &out_i, int &out_j){
 	// return i,j such that
 	// i: maximizes -y_i * grad(f)_i, i in I_up(\alpha)
@@ -886,7 +984,15 @@ int Solver::select_working_set(int &out_i, int &out_j){
 	out_j = Gmin_idx;
 	return 0;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  i      { parameter_description }
+ * @param[in]  Gmax1  The gmax 1
+ * @param[in]  Gmax2  The gmax 2
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool Solver::be_shrunk(int i, double Gmax1, double Gmax2)
 {
 	if(is_upper_bound(i))
@@ -906,7 +1012,9 @@ bool Solver::be_shrunk(int i, double Gmax1, double Gmax2)
 	else
 		return(false);
 }
-
+/**
+ * @brief      { function_description }
+ */
 void Solver::do_shrinking()
 {
 	int i;
@@ -967,7 +1075,11 @@ void Solver::do_shrinking()
 			}
 		}
 }
-
+/**
+ * @brief      Calculates the rho.
+ *
+ * @return     The rho.
+ */
 double Solver::calculate_rho()
 {
 	double r;
@@ -1011,6 +1123,10 @@ double Solver::calculate_rho()
 //
 // additional constraint: e^T \alpha = constant
 //
+
+/**
+ * @brief      Class for solver nu.
+ */
 class Solver_NU: public Solver
 {
 public:
@@ -1031,6 +1147,15 @@ private:
 };
 
 // return 1 if already optimal, return 0 otherwise
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      out_i  The out i
+ * @param      out_j  The out j
+ *
+ * @return     { description_of_the_return_value }
+ */
 int Solver_NU::select_working_set(int &out_i, int &out_j)
 {
 	// return i,j such that y_i = y_j and
@@ -1143,6 +1268,17 @@ int Solver_NU::select_working_set(int &out_i, int &out_j)
 	return 0;
 }
 
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  i      { parameter_description }
+ * @param[in]  Gmax1  The gmax 1
+ * @param[in]  Gmax2  The gmax 2
+ * @param[in]  Gmax3  The gmax 3
+ * @param[in]  Gmax4  The gmax 4
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool Solver_NU::be_shrunk(int i, double Gmax1, double Gmax2, double Gmax3, double Gmax4)
 {
 	if(is_upper_bound(i))
@@ -1162,9 +1298,10 @@ bool Solver_NU::be_shrunk(int i, double Gmax1, double Gmax2, double Gmax3, doubl
 	else
 		return(false);
 }
-
-void Solver_NU::do_shrinking()
-{
+/**
+ * @brief  Method do shrinking to data labels
+ */
+void Solver_NU::do_shrinking(){
 	double Gmax1 = -INF;	// max { -y_i * grad(f)_i | y_i = +1, i in I_up(\alpha) }
 	double Gmax2 = -INF;	// max { y_i * grad(f)_i | y_i = +1, i in I_low(\alpha) }
 	double Gmax3 = -INF;	// max { -y_i * grad(f)_i | y_i = -1, i in I_up(\alpha) }
@@ -1172,28 +1309,31 @@ void Solver_NU::do_shrinking()
 
 	// find maximal violating pair first
 	int i;
-	for(i=0;i<active_size;i++)
-	{
-		if(!is_upper_bound(i))
-		{
-			if(y[i]==+1)
-			{
-				if(-G[i] > Gmax1) Gmax1 = -G[i];
+	for(i=0;i<active_size;i++){
+		if(!is_upper_bound(i)){
+			if(y[i]==+1){
+				if(-G[i] > Gmax1){
+					Gmax1 = -G[i];
+				}
+			}else{
+				if(-G[i] > Gmax4){
+					Gmax4 = -G[i];
+				}
 			}
-			else	if(-G[i] > Gmax4) Gmax4 = -G[i];
 		}
-		if(!is_lower_bound(i))
-		{
-			if(y[i]==+1)
-			{
-				if(G[i] > Gmax2) Gmax2 = G[i];
+		if(!is_lower_bound(i)){
+			if(y[i]==+1){
+				if(G[i] > Gmax2){
+					Gmax2 = G[i];
+				}
+			}else{
+				if(G[i] > Gmax3){
+					Gmax3 = G[i];
+				}
 			}
-			else	if(G[i] > Gmax3) Gmax3 = G[i];
 		}
 	}
-
-	if(unshrink == false && max(Gmax1+Gmax2,Gmax3+Gmax4) <= eps*10)
-	{
+	if(unshrink == false && max(Gmax1+Gmax2,Gmax3+Gmax4) <= eps*10){
 		unshrink = true;
 		reconstruct_gradient();
 		active_size = l;
@@ -1214,7 +1354,11 @@ void Solver_NU::do_shrinking()
 			}
 		}
 }
-
+/**
+ * @brief      Calculates the rho.
+ *
+ * @return     The rho.
+ */
 double Solver_NU::calculate_rho()
 {
 	int nr_free1 = 0,nr_free2 = 0;
@@ -1268,6 +1412,10 @@ double Solver_NU::calculate_rho()
 //
 // Q matrices for various formulations
 //
+
+/**
+ * @brief      Class for svc quarter.
+ */
 class SVC_Q: public Kernel
 {
 public:
@@ -1318,6 +1466,9 @@ private:
 	double *QD;
 };
 
+/**
+ * @brief      Class for one class quarter.
+ */
 class ONE_CLASS_Q: public Kernel
 {
 public:
@@ -1364,6 +1515,9 @@ private:
 	double *QD;
 };
 
+/**
+ * @brief      Class for svr quarter.
+ */
 class SVR_Q: public Kernel
 {
 public:
@@ -1441,7 +1595,17 @@ private:
 
 //
 // construct and solve various formulations
-//
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param      alpha  The alpha
+ * @param      si     { parameter_description }
+ * @param[in]  Cp     { parameter_description }
+ * @param[in]  Cn     { parameter_description }
+ */
 static void solve_c_svc(
 	const svm_problem *prob, const svm_parameter* param,
 	double *alpha, Solver::SolutionInfo* si, double Cp, double Cn)
@@ -1477,6 +1641,14 @@ static void solve_c_svc(
 	delete[] y;
 }
 
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param      alpha  The alpha
+ * @param      si     { parameter_description }
+ */
 static void solve_nu_svc(
 	const svm_problem *prob, const svm_parameter *param,
 	double *alpha, Solver::SolutionInfo* si)
@@ -1531,7 +1703,14 @@ static void solve_nu_svc(
 	delete[] y;
 	delete[] zeros;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param      alpha  The alpha
+ * @param      si     { parameter_description }
+ */
 static void solve_one_class(
 	const svm_problem *prob, const svm_parameter *param,
 	double *alpha, Solver::SolutionInfo* si)
@@ -1563,7 +1742,14 @@ static void solve_one_class(
 	delete[] zeros;
 	delete[] ones;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param      alpha  The alpha
+ * @param      si     { parameter_description }
+ */
 static void solve_epsilon_svr(
 	const svm_problem *prob, const svm_parameter *param,
 	double *alpha, Solver::SolutionInfo* si)
@@ -1601,7 +1787,14 @@ static void solve_epsilon_svr(
 	delete[] linear_term;
 	delete[] y;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param      alpha  The alpha
+ * @param      si     { parameter_description }
+ */
 static void solve_nu_svr(
 	const svm_problem *prob, const svm_parameter *param,
 	double *alpha, Solver::SolutionInfo* si)
@@ -1642,13 +1835,26 @@ static void solve_nu_svr(
 
 //
 // decision_function
-//
+
+/**
+ * @brief Struct to save decision function.
+ */
 struct decision_function
 {
 	double *alpha;
 	double rho;
 };
 
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param[in]  Cp     { parameter_description }
+ * @param[in]  Cn     { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
 static decision_function svm_train_one(
 	const svm_problem *prob, const svm_parameter *param,
 	double Cp, double Cn)
@@ -1707,6 +1913,16 @@ static decision_function svm_train_one(
 }
 
 // Platt's binary SVM Probablistic Output: an improvement from Lin et al.
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  l           { parameter_description }
+ * @param[in]  dec_values  The decrement values
+ * @param[in]  labels      The labels
+ * @param      A           { parameter_description }
+ * @param      B           { parameter_description }
+ */
 static void sigmoid_train(
 	int l, const double *dec_values, const double *labels,
     double &A, double &B){
@@ -1818,7 +2034,15 @@ static void sigmoid_train(
 		info("Reaching maximal iterations in two-class probability estimates\n");
 	free(t);
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  decision_value  The decision value
+ * @param[in]  A               { parameter_description }
+ * @param[in]  B               { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
 static double sigmoid_predict(double decision_value, double A, double B)
 {
 	double fApB = decision_value*A+B;
@@ -1830,6 +2054,14 @@ static double sigmoid_predict(double decision_value, double A, double B)
 }
 
 // Method 2 from the multiclass_prob paper by Wu, Lin, and Weng
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  k     { parameter_description }
+ * @param      r     { parameter_description }
+ * @param      p     { parameter_description }
+ */
 static void multiclass_probability(int k, double **r, double *p)
 {
 	int t,j;
@@ -1894,6 +2126,17 @@ static void multiclass_probability(int k, double **r, double *p)
 }
 
 // Cross-validation decision values for probability estimates
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ * @param[in]  Cp     { parameter_description }
+ * @param[in]  Cn     { parameter_description }
+ * @param      probA  The prob a
+ * @param      probB  The prob b
+ */
 static void svm_binary_svc_probability(
 	const svm_problem *prob, const svm_parameter *param,
 	double Cp, double Cn, double& probA, double& probB)
@@ -1981,6 +2224,15 @@ static void svm_binary_svc_probability(
 }
 
 // Return parameter of a Laplace distribution
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ *
+ * @return     { description_of_the_return_value }
+ */
 static double svm_svr_probability(
 	const svm_problem *prob, const svm_parameter *param)
 {
@@ -2015,6 +2267,17 @@ static double svm_svr_probability(
 
 // label: label name, start: begin of each class, count: #data of classes, perm: indices to the original data
 // perm, length l, must be allocated before calling this subroutine
+
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob          The prob
+ * @param      nr_class_ret  The nr class ret
+ * @param      label_ret     The label ret
+ * @param      start_ret     The start ret
+ * @param      count_ret     The count ret
+ * @param      perm          The permission
+ */
 static void svm_group_classes(const svm_problem *prob, int *nr_class_ret, int **label_ret, int **start_ret, int **count_ret, int *perm)
 {
 	int l = prob->l;
@@ -2090,11 +2353,15 @@ static void svm_group_classes(const svm_problem *prob, int *nr_class_ret, int **
 	free(data_label);
 }
 
-//
-// Interface functions
-//
-svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
-{
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ *
+ * @return     { description_of_the_return_value }
+ */
+svm_model *svm_train(const svm_problem *prob, const svm_parameter *param){
 	svm_model *model = Malloc(svm_model,1);
 	model->param = *param;
 	model->free_sv = 0;	// XXX
@@ -2242,12 +2509,10 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 		for(i=0;i<nr_class*(nr_class-1)/2;i++)
 			model->rho[i] = f[i].rho;
 
-		if(param->probability)
-		{
+		if(param->probability){
 			model->probA = Malloc(double,nr_class*(nr_class-1)/2);
 			model->probB = Malloc(double,nr_class*(nr_class-1)/2);
-			for(i=0;i<nr_class*(nr_class-1)/2;i++)
-			{
+			for(i=0;i<nr_class*(nr_class-1)/2;i++){
 				model->probA[i] = probA[i];
 				model->probB[i] = probB[i];
 			}
@@ -2338,7 +2603,14 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 	}
 	return model;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ *
+ * @return     { description_of_the_return_value }
+ */
 svm_model *svm_train_cuda(const svm_problem *prob, const svm_parameter *param)
 {
     CUDA_init_model(prob->x[0], prob->l);
@@ -2586,10 +2858,15 @@ svm_model *svm_train_cuda(const svm_problem *prob, const svm_parameter *param)
     }
     return model;
 }
-
-// Stratified cross validation
-void svm_cross_validation(const svm_problem *prob, const svm_parameter *param, int nr_fold, double *target)
-{
+/**
+ * @brief      Statified Cross Validation
+ *
+ * @param[in]  prob     The prob
+ * @param[in]  param    The parameter
+ * @param[in]  nr_fold  The nr fold
+ * @param      target   The target
+ */
+void svm_cross_validation(const svm_problem *prob, const svm_parameter *param, int nr_fold, double *target){
 	int i;
 	int *fold_start;
 	int l = prob->l;
@@ -2707,37 +2984,70 @@ void svm_cross_validation(const svm_problem *prob, const svm_parameter *param, i
 	free(fold_start);
 	free(perm);
 }
-
-
+/**
+ * @brief  Function to get SVM  type.
+ *
+ * @param[in]  model  The model
+ *
+ * @return     svm type
+ */
 int svm_get_svm_type(const svm_model *model)
 {
 	return model->param.svm_type;
 }
-
+/**
+ * @brief  Function to get the number of clases.
+ *
+ * @param[in]  model  The model
+ *
+ * @return     { number of clases }
+ */
 int svm_get_nr_class(const svm_model *model)
 {
 	return model->nr_class;
 }
-
+/**
+ * @brief  Function to get labels.
+ *
+ * @param[in]  model  The model
+ * @param      label  The label
+ */
 void svm_get_labels(const svm_model *model, int* label)
 {
 	if (model->label != NULL)
 		for(int i=0;i<model->nr_class;i++)
 			label[i] = model->label[i];
 }
-
+/**
+ * @brief Function to get svm indices
+ *
+ * @param[in]  model    The model
+ * @param      indices  The indices
+ */
 void svm_get_sv_indices(const svm_model *model, int* indices)
 {
 	if (model->sv_indices != NULL)
 		for(int i=0;i<model->l;i++)
 			indices[i] = model->sv_indices[i];
 }
-
+/**
+ * @brief Function to get the number of features.
+ *
+ * @param[in]  model  The model
+ *
+ * @return     { number of features }
+ */
 int svm_get_nr_sv(const svm_model *model)
 {
 	return model->l;
 }
-
+/**
+ * @brief Function to get svr probability
+ *
+ * @param[in]  model  The model
+ *
+ * @return     { svr probability }
+ */
 double svm_get_svr_probability(const svm_model *model)
 {
 	if ((model->param.svm_type == EPSILON_SVR || model->param.svm_type == NU_SVR) &&
@@ -2749,14 +3059,20 @@ double svm_get_svr_probability(const svm_model *model)
 		return 0;
 	}
 }
-
-double svm_predict_values(const svm_model *model, const svm_node *x, double* dec_values)
-{
+/**
+ * @brief      Predict Values
+ *
+ * @param[in]  model       The model
+ * @param[in]  x           { parameter_description }
+ * @param      dec_values  The decrement values
+ *
+ * @return     { description_of_the_return_value }
+ */
+double svm_predict_values(const svm_model *model, const svm_node *x, double* dec_values){
 	int i;
 	if(model->param.svm_type == ONE_CLASS ||
 	   model->param.svm_type == EPSILON_SVR ||
-	   model->param.svm_type == NU_SVR)
-	{
+	   model->param.svm_type == NU_SVR){
 		double *sv_coef = model->sv_coef[0];
 		double sum = 0;
 		for(i=0;i<model->l;i++)
@@ -2768,9 +3084,7 @@ double svm_predict_values(const svm_model *model, const svm_node *x, double* dec
 			return (sum>0)?1:-1;
 		else
 			return sum;
-	}
-	else
-	{
+	}else{
 		int nr_class = model->nr_class;
 		int l = model->l;
 
@@ -2825,7 +3139,14 @@ double svm_predict_values(const svm_model *model, const svm_node *x, double* dec
 		return model->label[vote_max_idx];
 	}
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  model  The model
+ * @param[in]  x      { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
 double svm_predict(const svm_model *model, const svm_node *x)
 {
 	int nr_class = model->nr_class;
@@ -2840,7 +3161,15 @@ double svm_predict(const svm_model *model, const svm_node *x)
 	free(dec_values);
 	return pred_result;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  model           The model
+ * @param[in]  x               { parameter_description }
+ * @param      prob_estimates  The prob estimates
+ *
+ * @return     { description_of_the_return_value }
+ */
 double svm_predict_probability(const svm_model *model, const svm_node *x, double *prob_estimates){
 	if ((model->param.svm_type == C_SVC || model->param.svm_type == NU_SVC) &&
 	    model->probA!=NULL && model->probB!=NULL){
@@ -2883,15 +3212,26 @@ double svm_predict_probability(const svm_model *model, const svm_node *x, double
 		return svm_predict(model, x);
     }
 }
-
+/**
+ * Array that contains string correspondig of each type of SVM
+ */
 static const char *svm_type_table[] = {
 	"c_svc","nu_svc","one_class","epsilon_svr","nu_svr",NULL
 };
-
+/**
+ * Array that contains string correspondig of each kernel type of current SVM
+ */
 static const char *kernel_type_table[]= {
 	"linear","polynomial","rbf","sigmoid","precomputed",NULL
 };
-
+/**
+ * @brief      Save Model.
+ *
+ * @param[in]  model_file_name  The model file name
+ * @param[in]  model            The model
+ *
+ * @return     { status of save model }
+ */
 int svm_save_model(const char *model_file_name, const svm_model *model){
 	FILE *fp = fopen(model_file_name,"w");
 	if(fp==NULL) return -1;
@@ -2990,7 +3330,13 @@ int svm_save_model(const char *model_file_name, const svm_model *model){
 
 static char *line = NULL;
 static int max_line_len;
-
+/**
+ * @brief      Read line from file.
+ *
+ * @param      input  The input
+ *
+ * @return     { description_of_the_return_value }
+ */
 static char* readline(FILE *input)
 {
 	int len;
@@ -3017,6 +3363,14 @@ static char* readline(FILE *input)
 // is used
 //
 #define FSCANF(_stream, _format, _var) do{ if (fscanf(_stream, _format, _var) != 1) return false; }while(0)
+/**
+ * @brief      Reads a model header.
+ *
+ * @param      fp     { parameter_description }
+ * @param      model  The model
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool read_model_header(FILE *fp, svm_model* model)
 {
 	svm_parameter& param = model->param;
@@ -3130,7 +3484,13 @@ bool read_model_header(FILE *fp, svm_model* model)
 	return true;
 
 }
-
+/**
+ * @brief      Load model from file
+ *
+ * @param[in]  model_file_name  The model file name
+ *
+ * @return     { A SVM model. }
+ */
 svm_model *svm_load_model(const char *model_file_name)
 {
 	FILE *fp = fopen(model_file_name,"rb");
@@ -3238,7 +3598,11 @@ svm_model *svm_load_model(const char *model_file_name)
 	model->free_sv = 1;	// XXX
 	return model;
 }
-
+/**
+ * @brief      { Free Model Content }
+ *
+ * @param      model_ptr  The model pointer
+ */
 void svm_free_model_content(svm_model* model_ptr)
 {
 	if(model_ptr->free_sv && model_ptr->l > 0 && model_ptr->SV != NULL)
@@ -3273,7 +3637,11 @@ void svm_free_model_content(svm_model* model_ptr)
 	free(model_ptr->nSV);
 	model_ptr->nSV = NULL;
 }
-
+/**
+ * @brief      Free and destroy model 
+ *             
+ * @param      model_ptr_ptr  The model pointer pointer
+ */
 void svm_free_and_destroy_model(svm_model** model_ptr_ptr)
 {
 	if(model_ptr_ptr != NULL && *model_ptr_ptr != NULL)
@@ -3283,13 +3651,24 @@ void svm_free_and_destroy_model(svm_model** model_ptr_ptr)
 		*model_ptr_ptr = NULL;
 	}
 }
-
+/**
+ * @brief      Destroy parameters of model.
+ *
+ * @param      param  The parameter
+ */
 void svm_destroy_param(svm_parameter* param)
 {
 	free(param->weight_label);
 	free(param->weight);
 }
-
+/**
+ * @brief      check parameter.
+ *
+ * @param[in]  prob   The prob
+ * @param[in]  param  The parameter
+ *
+ * @return     { description_of_the_return_value }
+ */
 const char *svm_check_parameter(const svm_problem *prob, const svm_parameter *param)
 {
 	// svm_type
@@ -3410,7 +3789,13 @@ const char *svm_check_parameter(const svm_problem *prob, const svm_parameter *pa
 
 	return NULL;
 }
-
+/**
+ * @brief      Check if it is possible to compute model probability 
+ *
+ * @param[in]  model  The model
+ *
+ * @return     1 if it is possible or 0 other case.
+ */
 int svm_check_probability_model(const svm_model *model)
 {
 	return ((model->param.svm_type == C_SVC || model->param.svm_type == NU_SVC) &&
@@ -3418,7 +3803,11 @@ int svm_check_probability_model(const svm_model *model)
 		((model->param.svm_type == EPSILON_SVR || model->param.svm_type == NU_SVR) &&
 		 model->probA!=NULL);
 }
-
+/**
+ * @brief      Set print string function.
+ *
+ * @param[in]  print_func  The print function
+ */
 void svm_set_print_string_function(void (*print_func)(const char *))
 {
 	if(print_func == NULL)

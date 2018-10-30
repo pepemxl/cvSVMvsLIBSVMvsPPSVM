@@ -20,7 +20,13 @@ int predict_probability=0;
 
 static char *line = NULL;
 static int max_line_len;
-
+/**
+ * @brief      Read line
+ *
+ * @param      input  The input
+ *
+ * @return     Line read
+ */
 static char* readline(FILE *input){
 	int len;
     if(fgets(line,max_line_len,input) == NULL){
@@ -35,12 +41,21 @@ static char* readline(FILE *input){
 	}
 	return line;
 }
-
+/**
+ * @brief      Send a message in case of something wrong.
+ *
+ * @param[in]  line_num  The line number
+ */
 void exit_input_error_predict(int line_num){
 	fprintf(stderr,"Wrong input format at line %d\n", line_num);
 	exit(1);
 }
-
+/**
+ * @brief      Predict
+ *
+ * @param      input   The input
+ * @param      output  The output
+ */
 void predict(FILE *input, FILE *output){
 	int correct = 0;
 	int total = 0;
@@ -162,7 +177,16 @@ void exit_with_help_predict()
 	);
 	exit(1);
 }
-
+/**
+ * @brief      SVM predict main function
+ *
+ * @param[in]  argc  The argc
+ * @param      argv  The argv
+ *
+ * @return     0 if there is all OK
+ * 
+ * @todo This function have to be changed in order to create a wrapper.
+ */
 int svm_predict_main(int argc, char **argv){
 //int main(int argc, char **argv){
 	FILE *input, *output;

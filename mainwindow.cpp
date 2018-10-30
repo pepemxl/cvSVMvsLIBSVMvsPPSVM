@@ -44,13 +44,22 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+/**
+ * @brief      Sets the valid extensions.
+ */
 void MainWindow::setValidExtensions(){
     this->qslValidExtensions.push_back("*.jpg");
     this->qslValidExtensions.push_back("*.JPG");
     this->qslValidExtensions.push_back("*.png");
     this->qslValidExtensions.push_back("*.PNG");
 }
-
+/**
+ * @brief      Run python script
+ *
+ * @param      path       The path
+ * @param      fileName   The file name
+ * @param      extension  The extension
+ */
 void MainWindow::runPythonScript(char *path,char *fileName,char *extension){
     if(!this->getFlagPython()){
         fout = popen("/home/pepe/anaconda3/envs/opencv/bin/python", "w");
@@ -101,71 +110,128 @@ void MainWindow::runPythonScript(char *path,char *fileName,char *extension){
     fprintf(fout,"    f.close()\n");
 }
 
+/**
+ * @brief      Gets the directory test set 2.
+ *
+ * @return     The directory test set 2.
+ */
 QDir MainWindow::getDirectoryTestSet2() const
 {
     return directoryTestSet2;
 }
-
+/**
+ * @brief      Sets the directory test set 2.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setDirectoryTestSet2(const QDir &value)
 {
     directoryTestSet2 = value;
 }
-
+/**
+ * @brief      Gets the directory test set 1.
+ *
+ * @return     The directory test set 1.
+ */
 QDir MainWindow::getDirectoryTestSet1() const
 {
     return directoryTestSet1;
 }
-
+/**
+ * @brief      Sets the directory test set 1.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setDirectoryTestSet1(const QDir &value)
 {
     directoryTestSet1 = value;
 }
-
+/**
+ * @brief      Gets the directory train set 2.
+ *
+ * @return     The directory train set 2.
+ */
 QDir MainWindow::getDirectoryTrainSet2() const
 {
     return directoryTrainSet2;
 }
-
+/**
+ * @brief      Sets the directory train set 2.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setDirectoryTrainSet2(const QDir &value)
 {
     directoryTrainSet2 = value;
 }
-
+/**
+ * @brief      Gets the directory train set 1.
+ *
+ * @return     The directory train set 1.
+ */
 QDir MainWindow::getDirectoryTrainSet1() const
 {
     return directoryTrainSet1;
 }
-
+/**
+ * @brief      Sets the directory train set 1.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setDirectoryTrainSet1(const QDir &value)
 {
     directoryTrainSet1 = value;
 }
-
+/**
+ * @brief      Gets the directory in.
+ *
+ * @return     The directory in.
+ */
 QDir MainWindow::getDirectoryIn() const
 {
     return directoryIn;
 }
-
+/**
+ * @brief      Sets the directory in.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setDirectoryIn(const QDir &value)
 {
     directoryIn = value;
 }
-
+/**
+ * @brief      Gets the current input path.
+ *
+ * @return     The current input path.
+ */
 std::string MainWindow::getCurrentInputPath() const
 {
     return currentInputPath;
 }
-
+/**
+ * @brief      Sets the current input path.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentInputPath(const std::string &value)
 {
     currentInputPath = value;
 }
-
+/**
+ * @brief      Gets the current output path.
+ *
+ * @return     The current output path.
+ */
 std::string MainWindow::getCurrentOutputPath() const
 {
     return currentOutputPath;
 }
-
+/**
+ * @brief      Sets the current output path.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentOutputPath(const std::string &value)
 {
     currentOutputPath = value;
@@ -175,47 +241,83 @@ std::string MainWindow::getStrGameId() const
 {
     return strGameId;
 }
-
+/**
+ * @brief      Sets the string game identifier.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setStrGameId(const std::string &value)
 {
     strGameId = value;
 }
-
+/**
+ * @brief      Gets the string game configuration path.
+ *
+ * @return     The string game configuration path.
+ */
 std::string MainWindow::getStrGameConfigPath() const
 {
     return strGameConfigPath;
 }
-
+/**
+ * @brief      Sets the string game configuration path.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setStrGameConfigPath(const std::string &value)
 {
     strGameConfigPath = value;
 }
-
+/**
+ * @brief      Gets the string file name game configuration.
+ *
+ * @return     The string file name game configuration.
+ */
 std::string MainWindow::getStrFileNameGameConfig() const
 {
     return strFileNameGameConfig;
 }
-
+/**
+ * @brief      Sets the string file name game configuration.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setStrFileNameGameConfig(const std::string &value)
 {
     strFileNameGameConfig = value;
 }
-
+/**
+ * @brief      Gets the string file name tv.
+ *
+ * @return     The string file name tv.
+ */
 std::string MainWindow::getStrFileNameTV() const
 {
     return strFileNameTV;
 }
-
+/**
+ * @brief      Sets the string file name tv.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setStrFileNameTV(const std::string &value)
 {
     strFileNameTV = value;
 }
-
+/**
+ * @brief      Gets the string file name panoramic.
+ *
+ * @return     The string file name panoramic.
+ */
 std::string MainWindow::getStrFileNamePanoramic() const
 {
     return strFileNamePanoramic;
 }
-
+/**
+ * @brief      Sets the string file name panoramic.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setStrFileNamePanoramic(const std::string &value)
 {
     strFileNamePanoramic = value;
@@ -225,84 +327,143 @@ int MainWindow::getCurrentSingleChunkTV() const
 {
     return currentSingleChunkTV;
 }
-
+/**
+ * @brief      Sets the current single chunk tv.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentSingleChunkTV(int value)
 {
     currentSingleChunkTV = value;
 }
-
+/**
+ * @brief      Gets the current single frame tv.
+ *
+ * @return     The current single frame tv.
+ */
 int MainWindow::getCurrentSingleFrameTV() const
 {
     return currentSingleFrameTV;
 }
-
+/**
+ * @brief      Sets the current single frame tv.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentSingleFrameTV(int value)
 {
     currentSingleFrameTV = value;
 }
-
+/**
+ * @brief      Gets the current single chunk panoramic.
+ *
+ * @return     The current single chunk panoramic.
+ */
 int MainWindow::getCurrentSingleChunkPanoramic() const
 {
     return currentSingleChunkPanoramic;
 }
-
+/**
+ * @brief      Sets the current single chunk panoramic.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentSingleChunkPanoramic(int value)
 {
     currentSingleChunkPanoramic = value;
 }
-
+/**
+ * @brief      Gets the current single frame panoramic.
+ *
+ * @return     The current single frame panoramic.
+ */
 int MainWindow::getCurrentSingleFramePanoramic() const
 {
     return currentSingleFramePanoramic;
 }
-
+/**
+ * @brief      Sets the current single frame panoramic.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentSingleFramePanoramic(int value)
 {
     currentSingleFramePanoramic = value;
 }
-
+/**
+ * @brief      Gets the current begining frame panoramic.
+ *
+ * @return     The current begining frame panoramic.
+ */
 int MainWindow::getCurrentBeginingFramePanoramic() const
 {
     return currentBeginingFramePanoramic;
 }
-
+/**
+ * @brief      Sets the current begining frame panoramic.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentBeginingFramePanoramic(int value)
 {
     currentBeginingFramePanoramic = value;
 }
-
+/**
+ * @brief      Gets the current begining frame tv.
+ *
+ * @return     The current begining frame tv.
+ */
 int MainWindow::getCurrentBeginingFrameTV() const
 {
     return currentBeginingFrameTV;
 }
-
+/**
+ * @brief      Sets the current begining frame tv.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setCurrentBeginingFrameTV(int value)
 {
     currentBeginingFrameTV = value;
 }
-
+/**
+ * @brief      Gets the flag ubication defined.
+ *
+ * @return     The flag ubication defined.
+ */
 bool MainWindow::getFlagUbicationDefined() const
 {
     return flagUbicationDefined;
 }
-
+/**
+ * @brief      Sets the flag ubication defined.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setFlagUbicationDefined(bool value)
 {
     flagUbicationDefined = value;
 }
-
+/**
+ * @brief      Gets the flag python.
+ *
+ * @return     The flag python.
+ */
 bool MainWindow::getFlagPython() const
 {
     return flagPython;
 }
-
+/**
+ * @brief      Sets the flag python.
+ *
+ * @param[in]  value  The value
+ */
 void MainWindow::setFlagPython(bool value)
 {
     flagPython = value;
 }
-
 /**
- * @brief      Update widget where video from panoramic is shown.
+ * @brief Update widget where video from panoramic is shown.
  */
 void MainWindow::updateVideoLabelPanoramic(){
     cv::Mat src;
@@ -467,7 +628,9 @@ void MainWindow::updateGUI(){
 //    this->updateLabelCurrentOutputPath();
 //    this->updateBeginingElementsView();
 }
-
+/**
+ * @brief  Test runPythonScript
+ */
 void MainWindow::on_pushButton_clicked()
 {
     char path[200];
@@ -479,7 +642,9 @@ void MainWindow::on_pushButton_clicked()
     //this->runPythonScript(path,fileName,extension);
     printf("HOLA %%");
 }
-
+/**
+ * @brief      Revisando funcionamiento de SVM
+ */
 void MainWindow::on_pushButton_2_clicked(){
     int labels[4] = {1, -1, -1, -1};
     float trainingData[4][2] = { {501, 10}, {255, 10}, {501, 255}, {10, 501} };
@@ -533,6 +698,14 @@ void MainWindow::on_pushButton_2_clicked(){
 //        data.append(img)
 //    return data
 
+/**
+ * @brief      Function less than.
+ *
+ * @param[in]  v1    The v 1
+ * @param[in]  v2    The v 2
+ *
+ * @return     Return result of comparison between param 1 and param 2.
+ */
 bool lessThan( const QString& v1, const QString& v2 )
 {
     bool result = false;
@@ -576,7 +749,9 @@ bool lessThan( const QString& v1, const QString& v2 )
         File.close();
     }
 }*/
-
+/**
+ * @brief      Test of Hog on Cuda
+ */
 void MainWindow::on_pushButton_3_clicked(){
     int contador = 0;
     unsigned long int elapsed_nanoseconds1 = 0;
@@ -669,7 +844,13 @@ void MainWindow::on_pushButton_3_clicked(){
 
 
 }
-
+/**
+ * @brief      Gets the files in directory.
+ *
+ * @param      Files  The files
+ *
+ * @return     The files in directory.
+ */
 int MainWindow::getFilesInDirectory(QStringList &Files){
     int n = 0;
     Files.clear();
@@ -677,7 +858,14 @@ int MainWindow::getFilesInDirectory(QStringList &Files){
     n = Files.length();
     return n;
 }
-
+/**
+ * @brief      Gets the files in directory.
+ *
+ * @param[in]  directory  The directory
+ * @param      Files      The files
+ *
+ * @return     The files in directory.
+ */
 int MainWindow::getFilesInDirectory(QDir directory, QStringList &Files){
     int n = 0;
     Files.clear();
@@ -689,7 +877,13 @@ int MainWindow::getFilesInDirectory(QDir directory, QStringList &Files){
     }
     return n;
 }
-
+/**
+ * @brief      Calculates the features from input.
+ *
+ * @param[in]  imageFilename  The image filename
+ * @param      featureVector  The feature vector
+ * @param      hog            The hog
+ */
 void MainWindow::calculateFeaturesFromInput(const string imageFilename, vector<float> &featureVector, HOGDescriptor& hog) {
     /** for imread flags from openCV documentation,
      * @see http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html?highlight=imread#Mat imread(const string& filename, int flags)
@@ -715,7 +909,13 @@ void MainWindow::calculateFeaturesFromInput(const string imageFilename, vector<f
     hog.compute(imageData, featureVector, winStride, trainingPadding, locations);
     imageData.release(); // Release the image again after features are extracted
 }
-
+/**
+ * @brief      Create lower version of string.
+ *
+ * @param[in]  in    { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
 static string toLowerCase(const string& in) {
     string t;
     for (string::const_iterator i = in.begin(); i != in.end(); ++i) {
@@ -723,17 +923,21 @@ static string toLowerCase(const string& in) {
     }
     return t;
 }
-
+/**
+ * @brief      Stores a cursor.
+ */
 static void storeCursor(void) {
     printf("\033[s");
 }
-
+/**
+ * @brief      Reset a cursor.
+ */
 static void resetCursor(void) {
     printf("\033[u");
 }
 
 /**
- * Saves the given descriptor vector to a file
+ * @brief  Saves the given descriptor vector to a file
  * @param descriptorVector the descriptor vector to save
  * @param _vectorIndices contains indices for the corresponding vector values (e.g. descriptorVector(0)=3.5f may have index 1)
  * @param fileName
@@ -768,7 +972,7 @@ static void saveDescriptorVectorToFile(vector<float>& descriptorVector, vector<u
 }
 
 /**
- * Test the trained detector against the same training set to get an approximate idea of the detector.
+ * @brief Test the trained detector against the same training set to get an approximate idea of the detector.
  * Warning: This does not allow any statement about detection quality, as the detector might be overfitting.
  * Detector quality must be determined using an independent test set.
  * @param hog
@@ -810,7 +1014,7 @@ void MainWindow::detectTrainingSetTest(const HOGDescriptor& hog, const double hi
 
 
 /**
- * Shows the detections in the image
+ * @brief Shows the detections in the image
  * @param found vector containing valid detection rectangles
  * @param imageData the image in which the detections are drawn
  */
@@ -830,7 +1034,13 @@ static void showDetections(const vector<Rect>& found, Mat& imageData) {
         rectangle(imageData, r.tl(), r.br(), Scalar(64, 255, 64), 3);
     }
 }
-
+/**
+ * @brief      Detect Test
+ *
+ * @param[in]  hog           The hog
+ * @param[in]  hitThreshold  The hit threshold
+ * @param      imageData     The image data
+ */
 void MainWindow::detectTest(const HOGDescriptor &hog, const double hitThreshold, Mat &imageData) {
     vector<Rect> found;
     Size padding(Size(8, 8));
@@ -843,6 +1053,9 @@ void MainWindow::detectTest(const HOGDescriptor &hog, const double hitThreshold,
 
 //}
 
+/**
+ * @brief      SVM train test
+ */
 void MainWindow::on_pushButton_4_clicked(){
     LIBSVM SVM_instancia;
     HOGDescriptor hog;
@@ -937,7 +1150,9 @@ void MainWindow::on_pushButton_4_clicked(){
     //printf("Testing training phase using training set as test set (just to check if training is ok - no detection quality conclusion with this!)\n");
     //detectTrainingSetTest(hog, hitThreshold, positiveTrainingImages, negativeTrainingImages);
 }
-
+/**
+ * @brief      SVM load model test
+ */
 void MainWindow::on_pushButton_5_clicked()
 {
     int contador = 0;
@@ -1001,7 +1216,9 @@ void MainWindow::on_pushButton_5_clicked()
     std::cout.setf( std::ios::fixed, std:: ios::floatfield );
     std::cout << contador << " " << mean_elapsed_nanoseconds1 << std::endl;*/
 }
-
+/**
+ * @brief      SVM save trained model test
+ */
 void MainWindow::on_pushButton_6_clicked()
 {
     LIBSVM SVM_instancia;
@@ -1092,8 +1309,118 @@ void MainWindow::on_pushButton_6_clicked()
     hog.setSVMDetector(descriptorVector);
     hog.save(cvHOGFile);
 }
-
+/**
+ * @brief      SVM predict propability test.
+ */
 void MainWindow::on_pushButton_7_clicked()
+{
+    int contador = 0;
+    unsigned long int elapsed_nanoseconds1 = 0;
+    unsigned long int elapsed_nanoseconds2 = 0;
+    unsigned long int elapsed_useconds1 = 0;
+    unsigned long int elapsed_useconds2 = 0;
+    unsigned long int total_elapsed_nanoseconds1 = 0;
+    unsigned long int total_elapsed_nanoseconds2 = 0;
+    unsigned long int total_elapsed_useconds1 = 0;
+    unsigned long int total_elapsed_useconds2 = 0;
+    double mean_elapsed_nanoseconds1 = 0;
+    double mean_elapsed_nanoseconds2 = 0;
+    std::chrono::duration<double, std::nano> elapsed1;
+    std::chrono::duration<double, std::nano> elapsed2;
+    //auto startChrono = std::chrono::steady_clock::now();
+    auto startChrono = std::chrono::system_clock::now();
+    //auto endChrono = std::chrono::steady_clock::now();
+    auto endChrono = std::chrono::system_clock::now();
+    LIBSVM SVM_instancia;
+    HOGDescriptor hog;
+    hog.winSize = Size(128, 128);
+    float percent;
+    this->setDirectoryIn(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/Humanos"));
+    this->setDirectoryTrainSet1(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTrain"));
+    this->setDirectoryTrainSet2(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTrain"));
+    this->setDirectoryTestSet1(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTest"));
+    this->setDirectoryTestSet2(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTest"));
+    QStringList positiveTrainingImages;
+    QStringList negativeTrainingImages;
+    QStringList positiveTestImages;
+    QStringList negativeTestImages;
+    int nPositiveTrainingImages = this->getFilesInDirectory(this->directoryTrainSet1,positiveTrainingImages);
+    int nNegativeTrainingImages = this->getFilesInDirectory(this->directoryTrainSet2,negativeTrainingImages);
+    int nPositiveTestImages = this->getFilesInDirectory(this->directoryTestSet1,positiveTestImages);
+    int nNegativeTestImages = this->getFilesInDirectory(this->directoryTestSet2,negativeTestImages);
+    //foreach(QString filename, positiveTrainingImages) {
+    //    std::cout << filename.toStdString() << std::endl;
+    //}
+    std::cout << nPositiveTrainingImages << ",";
+    std::cout << nNegativeTrainingImages << ",";
+    std::cout << nPositiveTestImages << ",";
+    std::cout << nNegativeTestImages << std::endl;
+    string featuresFile("features.dat");
+    string svmModelFile = "svm_model.dat";
+    string descriptorVectorFile = "descriptorvector.dat";
+    string cvHOGFile = "cvHOGClassifier.yaml";
+    int overallSamples = nPositiveTrainingImages+nNegativeTrainingImages;
+    if(overallSamples == 0){
+        printf("No training sample files found, nothing to do!\n");
+        return;
+    }
+    SVM_instancia.loadModelFromFile(svmModelFile);
+    // Guardando features de HOG
+    vector<float> descriptorVector;
+    vector<unsigned int> descriptorVectorIndices;
+    SVM_instancia.getSingleDetectingVector(descriptorVector, descriptorVectorIndices);
+    //saveDescriptorVectorToFile(descriptorVector, descriptorVectorIndices, descriptorVectorFile);
+    /// save opencv hog descriptor
+    const double hitThreshold = SVM_instancia.getThreshold();
+    std::cout << hitThreshold << std::endl;
+    /// Prediction
+    vector<float> featureVector;
+    for(int i = 0 ;i < positiveTestImages.size();++i){
+        QString currentImageFile = positiveTestImages.at(i);
+        //QString currentImageFile = negativeTestImages.at(0);
+        //startChrono = std::chrono::steady_clock::now();
+        startChrono = std::chrono::system_clock::now();
+        calculateFeaturesFromInput(currentImageFile.toStdString(), featureVector, hog);
+        //usleep(100000);
+        //endChrono = std::chrono::steady_clock::now();
+        endChrono = std::chrono::system_clock::now();
+        elapsed1 = endChrono-startChrono;
+        elapsed_nanoseconds1 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed1).count();
+        elapsed_useconds1 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed1).count();
+        total_elapsed_nanoseconds1 += elapsed_nanoseconds1;
+        total_elapsed_useconds1 += elapsed_useconds1;
+        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
+        this->x = (struct svm_node *)malloc(featureVector.size()*sizeof(struct svm_node));
+        startChrono = std::chrono::system_clock::now();
+        for(int j=0;j < featureVector.size();++j){
+            this->x[j].value = featureVector[j];
+            this->x[j].index = j+1;
+        }
+        double valueProbEstimate = 0;
+        int classification = 0;
+        classification = SVM_instancia.predictLabel(this->x,&valueProbEstimate);
+        endChrono = std::chrono::system_clock::now();
+        elapsed2 = endChrono-startChrono;
+        elapsed_nanoseconds2 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed2).count();
+        elapsed_useconds2 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed2).count();
+        total_elapsed_nanoseconds2 += elapsed_nanoseconds2;
+        total_elapsed_useconds2 += elapsed_useconds2;
+        free(this->x);
+        std::cout << "Corrida" << i << ": " <<  classification << std::endl;
+        std::cout << "Probabilidad: " << valueProbEstimate << std::endl;
+        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
+        //std::cout << "Tiempo Calculo SVM: " << elapsed_nanoseconds2 << std::endl;
+        contador++;
+    }
+    std::cout << "Tiempo Calculo Features: " << total_elapsed_useconds1/(double)contador << std::endl;
+    std::cout << "Tiempo Calculo SVM: " << total_elapsed_useconds2/(double)contador  << std::endl;
+    fflush(stdout);
+}
+
+/**
+ * @brief      SVM cuda version of predict propability test.
+ */
+void MainWindow::on_pushButton_8_clicked()
 {
     int contador = 0;
     unsigned long int elapsed_nanoseconds1 = 0;

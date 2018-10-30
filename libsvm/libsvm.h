@@ -30,6 +30,9 @@ using namespace libsvm;
     return &theInstance;
 }*/
 
+/**
+ * @brief      Class for libsvm.
+ */
 class LIBSVM {
 private:
     struct svm_problem prob;
@@ -97,6 +100,9 @@ public:
         x_space = NULL;
     }
 
+    /**
+     * @brief      Destroys the object.
+     */
     virtual ~LIBSVM() {
 //        printf("Freeing used SVM memory\n");
 //        if (this->predictionDataStructsUsed) {
@@ -115,6 +121,9 @@ public:
         return "libSVM";
     }
     
+    /**
+     * @brief      Free memory
+     */
     void freeMem() {
         if (this->trainingDataStructsUsed){
             free(prob.y);
@@ -129,6 +138,12 @@ public:
     /**
      * Reads in a file in svmlight format
      * @param filename
+     */
+
+    /**
+     * @brief      Reads a problem.
+     *
+     * @param      filename  The filename
      */
     void read_problem(char *filename) {
         setlocale(LC_NUMERIC,"C");
@@ -231,6 +246,12 @@ public:
      * Only makes sense after training was done
      * @param _modelFileName file name to save the model to
      */
+
+    /**
+     * @brief      Saves a model to file.
+     *
+     * @param[in]  _modelFileName  The model file name
+     */
     void saveModelToFile(const std::string _modelFileName) {
         if (svm_save_model(_modelFileName.c_str(), this->model)) {
             fprintf(stderr, "Error: Could not save model to file %s\n", _modelFileName.c_str());
@@ -241,6 +262,12 @@ public:
     /**
      * Function was unit tested, can be assumed libSVM model is correctly loaded from file
      * @param _modelFileName
+     */
+
+    /**
+     * @brief      Loads a model from file.
+     *
+     * @param[in]  _modelFileName  The model file name
      */
     void loadModelFromFile(const std::string _modelFileName) {
         this->freeMem();
@@ -276,18 +303,28 @@ public:
         this->predictionDataStructsUsed = true;
 //        exit(EXIT_SUCCESS);
     }
-
+    /**
+     * @brief      Gets the problem.
+     *
+     * @return     The problem.
+     */
     svm_problem getProblem() {
         return this->prob;
     }
-
+    /**
+     * @brief      Predict label
+     *
+     * @param      _sample        The sample
+     * @param      _probEstimate  The prob estimate
+     *
+     * @return     result of prediction
+     */
     float predictLabel(svm_node* _sample, double* _probEstimate){
         float predict_label = svm_predict_probability(model, _sample, _probEstimate);
         return predict_label;
     }
-
     /**
-     * After read in the training samples from a file, set parameters for training and call training procedure
+     * @brief      { After read in the training samples from a file, set parameters for training and call training procedure}
      */
     void train() {
         model = svm_train(&prob, &param);
@@ -299,6 +336,13 @@ public:
      * vec1 = sum_1_n (alpha_y*x_i). (vec1 is a 1 x n column vector. n = feature vector length )
      * @param singleDetectorVector resulting single detector vector for use in openCV HOG
      * @param singleDetectorVectorIndices vector containing indices of features inside singleDetectorVector
+     */
+
+    /**
+     * @brief      Gets the single detecting vector.
+     *
+     * @param      singleDetectorVector         The single detector vector
+     * @param      singleDetectorVectorIndices  The single detector vector indices
      */
     void getSingleDetectingVector(std::vector<Treal>& singleDetectorVector, std::vector<unsigned int>& singleDetectorVectorIndices) {
         // Now we use the trained svm to retrieve the single detector vector
@@ -329,10 +373,10 @@ public:
             }
         }
     }
-
     /**
-     * Return model detection threshold / bias
-     * @return detection threshold / bias
+     * @brief      Return model detection threshold / bias
+     *
+     * @return     detection threshold / bias
      */
     double getThreshold() const {
         return model->rho[0];

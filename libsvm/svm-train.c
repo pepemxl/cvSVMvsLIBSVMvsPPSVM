@@ -7,7 +7,9 @@
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
 void print_null(const char *s) {}
-
+/**
+ * @brief      { function_description }
+ */
 void exit_with_help2()
 {
 	printf(
@@ -41,7 +43,11 @@ void exit_with_help2()
 	);
 	exit(1);
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  line_num  The line number
+ */
 void exit_input_error(int line_num)
 {
 	fprintf(stderr,"Wrong input format at line %d\n", line_num);
@@ -61,7 +67,13 @@ int nr_fold;
 
 static char *line = NULL;
 static int max_line_len;
-
+/**
+ * @brief      { function_description }
+ *
+ * @param      input  The input
+ *
+ * @return     { description_of_the_return_value }
+ */
 static char* readline(FILE *input){
 	int len;
 	if(fgets(line,max_line_len,input) == NULL)
@@ -76,7 +88,14 @@ static char* readline(FILE *input){
 	}
 	return line;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  argc  The argc
+ * @param      argv  The argv
+ *
+ * @return     { description_of_the_return_value }
+ */
 int svm_train_main(int argc, char **argv)
 {
     char input_file_name[1024];
@@ -115,7 +134,9 @@ int svm_train_main(int argc, char **argv)
 
 	return 0;
 }
-
+/**
+ * @brief      { function_description }
+ */
 void do_cross_validation()
 {
 	int i;
@@ -154,7 +175,14 @@ void do_cross_validation()
 	}
 	free(target);
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  argc             The argc
+ * @param      argv             The argv
+ * @param      input_file_name  The input file name
+ * @param      model_file_name  The model file name
+ */
 void parse_command_line(int argc, char **argv, char *input_file_name, char *model_file_name)
 {
 	int i;
@@ -269,19 +297,19 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 		sprintf(model_file_name,"%s.model",p);
 	}
 }
-
-// read in a problem (in svmlight format)
-
-void read_problem(const char *filename)
-{
+/**
+ * @brief      read in a problem (in svmlight format)
+ *
+ * @param[in]  filename  The filename
+ */
+void read_problem(const char *filename){
 	int max_index, inst_max_index, i;
 	size_t elements, j;
 	FILE *fp = fopen(filename,"r");
 	char *endptr;
 	char *idx, *val, *label;
 
-	if(fp == NULL)
-	{
+	if(fp == NULL){
 		fprintf(stderr,"can't open input file %s\n",filename);
 		exit(1);
 	}

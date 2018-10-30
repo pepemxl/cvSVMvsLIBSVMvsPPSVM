@@ -4,6 +4,9 @@
 #include <ctype.h>
 #include <string.h>
 
+/**
+ * @brief      { function_description }
+ */
 void exit_with_help()
 {
 	printf(
@@ -38,9 +41,17 @@ void output_target(double value);
 void output(int index, double value);
 char* readline(FILE *input);
 int clean_up(FILE *fp_restore, FILE *fp, const char *msg);
-
-int svm_scale_main(int argc,char **argv)
-{
+/**
+ * @brief      Main function to scale
+ *
+ * @param[in]  argc  The argc
+ * @param      argv  The argv
+ *
+ * @return     { description_of_the_return_value }
+ * 
+ * @todo This function have to be changed in other to create a wrapper.
+ */
+int svm_scale_main(int argc,char **argv){
 	int i,index;
 	FILE *fp, *fp_restore = NULL;
 	char *save_filename = NULL;
@@ -336,7 +347,13 @@ int svm_scale_main(int argc,char **argv)
 	fclose(fp);
 	return 0;
 }
-
+/**
+ * @brief      Read line from file
+ *
+ * @param      input  The input
+ *
+ * @return     Line read
+ */
 char* readline(FILE *input)
 {
 	int len;
@@ -354,11 +371,14 @@ char* readline(FILE *input)
 	}
 	return line;
 }
-
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  value  The value
+ */
 void output_target(double value)
 {
-	if(y_scaling)
-	{
+	if(y_scaling){
 		if(value == y_min)
 			value = y_lower;
 		else if(value == y_max)
@@ -368,7 +388,12 @@ void output_target(double value)
 	}
 	printf("%.17g ",value);
 }
-
+/**
+ * @brief      Output
+ *
+ * @param[in]  index  The index
+ * @param[in]  value  The value
+ */
 void output(int index, double value)
 {
 	/* skip single-valued attribute */
@@ -390,7 +415,15 @@ void output(int index, double value)
 		new_num_nonzeros++;
 	}
 }
-
+/**
+ * @brief      Clean up
+ *
+ * @param      fp_restore  The fp restore
+ * @param      fp          { parameter_description }
+ * @param[in]  msg         The message
+ *
+ * @return     -1
+ */
 int clean_up(FILE *fp_restore, FILE *fp, const char* msg)
 {
 	fprintf(stderr,	"%s", msg);
