@@ -27,12 +27,14 @@ int libsvm_version = LIBSVM_VERSION;
 typedef float Qfloat;
 typedef signed char schar;
 #ifndef min
-template <class T> static inline T min(T x,T y){
+template <class T> static inline T min(T x,T y)
+{
     return (x<y)?x:y;
 }
 #endif
 #ifndef max
-template <class T> static inline T max(T x,T y){
+template <class T> static inline T max(T x,T y)
+{
     return (x>y)?x:y;
 }
 #endif
@@ -41,7 +43,8 @@ template <class T> static inline T max(T x,T y){
  * \brief A simple swap.
  *
  */
-template <class T> static inline void swap(T &x, T &y){
+template <class T> static inline void swap(T &x, T &y)
+{
     T t=x;
     x=y;
     y=t;
@@ -51,7 +54,8 @@ template <class T> static inline void swap(T &x, T &y){
  * \brief Clone function to clone the first n elements from class S to class T.
  * 
  */ 
-template <class S, class T> static inline void clone(T* &dst, S* src, int n){
+template <class S, class T> static inline void clone(T* &dst, S* src, int n)
+{
 	dst = new T[n];
 	memcpy((void *)dst,(void *)src,sizeof(T)*n);
 }
@@ -62,7 +66,8 @@ template <class S, class T> static inline void clone(T* &dst, S* src, int n){
  *  [in] times
  *
  */
-static inline double powi(double base, int times){
+static inline double powi(double base, int times)
+{
     double tmp = base;
     double ret = 1.0;
     for(int t = times; t > 0; t /= 2){
@@ -80,7 +85,8 @@ static inline double powi(double base, int times){
 
 /** Por el momento desactivate esta funcion para poder revisar el rendimiento
 de la función sin considerar avisos a pantalla. */
-static void print_string_stdout(const char *s){
+static void print_string_stdout(const char *s)
+{
     //CAMBIAR comentado para appplicacion
     //fputs(s,stdout);
     //fflush(stdout);
@@ -89,7 +95,8 @@ static void print_string_stdout(const char *s){
 static void (*svm_print_string) (const char *) = &print_string_stdout;
 
 #if 1
-static void info(const char *fmt,...){
+static void info(const char *fmt,...)
+{
 	char buf[BUFSIZ];
 	va_list ap;
 	va_start(ap,fmt);
@@ -138,7 +145,8 @@ private:
  * @param[in]  l_     { parameter_description }
  * @param[in]  size_  The size
  */
-Cache::Cache(int l_,long int size_):l(l_),size(size_){
+Cache::Cache(int l_,long int size_):l(l_),size(size_)
+{
 	head = (head_t *)calloc(l,sizeof(head_t));	// initialized to 0
 	size /= sizeof(Qfloat);
 	size -= l * sizeof(head_t) / sizeof(Qfloat);
@@ -148,7 +156,8 @@ Cache::Cache(int l_,long int size_):l(l_),size(size_){
 /**
  * @brief      Destroys the object.
  */
-Cache::~Cache(){
+Cache::~Cache()
+{
 	for(head_t *h = lru_head.next; h != &lru_head; h=h->next)
 		free(h->data);
 	free(head);
@@ -158,7 +167,8 @@ Cache::~Cache(){
  *
  * @param      h     { Head }
  */
-void Cache::lru_delete(head_t *h){
+void Cache::lru_delete(head_t *h)
+{
 	h->prev->next = h->next;
 	h->next->prev = h->prev;
 }
@@ -167,7 +177,8 @@ void Cache::lru_delete(head_t *h){
  *
  * @param      h     { Head }
  */
-void Cache::lru_insert(head_t *h){
+void Cache::lru_insert(head_t *h)
+{
 	h->next = &lru_head;
 	h->prev = lru_head.prev;
 	h->prev->next = h;
@@ -182,7 +193,8 @@ void Cache::lru_insert(head_t *h){
  *
  * @return     The data.
  */
-int Cache::get_data(const int index, Qfloat **data, int len){
+int Cache::get_data(const int index, Qfloat **data, int len)
+{
 	head_t *h = &head[index];
     if(h->len){
         lru_delete(h);
@@ -213,7 +225,8 @@ int Cache::get_data(const int index, Qfloat **data, int len){
  * @param[in]  i     { parameter_description }
  * @param[in]  j     { parameter_description }
  */
-void Cache::swap_index(int i, int j){
+void Cache::swap_index(int i, int j)
+{
     if(i==j){
         return;
     }
@@ -258,7 +271,8 @@ void Cache::swap_index(int i, int j){
  * the constructor of Kernel prepares to calculate the l*l kernel matrix
  * the member function get_Q is for getting one column from the Q Matrix
  */
-class QMatrix{
+class QMatrix
+{
 public:
 	virtual Qfloat *get_Q(int column, int len) const = 0;
 	virtual double *get_QD() const = 0;
@@ -269,7 +283,8 @@ public:
 /**
  * @brief      Class for kernel.
  */
-class Kernel: public QMatrix{
+class Kernel: public QMatrix
+{
 public:
     Kernel(int l, svm_node * const * x, const svm_parameter &param);
 	virtual ~Kernel();
@@ -300,22 +315,62 @@ private:
 	const double coef0;
 
 	static double dot(const svm_node *px, const svm_node *py);
+	/**
+	 * @brief      Method to compute kernel linear on private array **x.
+	 *
+	 * @param[in]  i     Index of first svm node on **x
+	 * @param[in]  j     Index of second svm node on **x
+	 *
+	 * @return     Dot product between svm node x[i] and x[j].
+	 */
 	double kernel_linear(int i, int j) const
 	{
 		return dot(x[i],x[j]);
 	}
+	/**
+	 * @brief      Method to compute kernel poly on private array **x.
+	 *
+	 * @param[in]  i     Index of first svm node on **x
+	 * @param[in]  j     Index of second svm node on **x
+	 *
+	 * @return     Evaluation of kernel Poly on svm node x[i] and x[j].
+	 */
 	double kernel_poly(int i, int j) const
 	{
 		return powi(gamma*dot(x[i],x[j])+coef0,degree);
 	}
+	/**
+	 * @brief      Method to compute kernel rbf on private array **x.
+	 *
+	 * @param[in]  i     Index of first svm node on **x
+	 * @param[in]  j     Index of second svm node on **x
+	 *
+	 * @return     Evaluation of kernel rbf on svm node x[i] and x[j].
+	 */
 	double kernel_rbf(int i, int j) const
 	{
 		return exp(-gamma*(x_square[i]+x_square[j]-2*dot(x[i],x[j])));
 	}
+	/**
+	 * @brief      Method to compute kernel sigmoid on private array x.
+	 *
+	 * @param[in]  i     Index of first svm node on **x
+	 * @param[in]  j     Index of second svm node on **x
+	 *
+	 * @return     Evaluation of kernel sigmoid on svm node x[i] and x[j].
+	 */
 	double kernel_sigmoid(int i, int j) const
 	{
 		return tanh(gamma*dot(x[i],x[j])+coef0);
 	}
+	/**
+	 * @brief      Method to compute kernel precomputed on private attribute x.
+	 *
+	 * @param[in]  i     Index of first svm node on **x
+	 * @param[in]  j     Index of second svm node on **x
+	 *
+	 * @return     Evaluation of kernel precomputed on svm node x[i] and x[j].
+	 */
 	double kernel_precomputed(int i, int j) const
 	{
 		return x[i][(int)(x[j][0].value)].value;
@@ -324,12 +379,15 @@ private:
 
 /**
  * @brief      Constructs the object.
+ * 
+ * The array x_ is cloned on x.
  *
- * @param[in]  l      { parameter_description }
- * @param      x_     { parameter_description }
- * @param[in]  param  The parameter
+ * @param[in]  l      Number of vector features
+ * @param      x_     Array of svm nodes.
+ * @param[in]  param  Structure of parameters
+ * 
  */
-Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
+Kernel::Kernel(int l, svm_node *const *x_, const svm_parameter& param)
 :kernel_type(param.kernel_type), degree(param.degree),
  gamma(param.gamma), coef0(param.coef0)
 {
@@ -367,19 +425,21 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 /**
  * @brief      Destroys the object.
  */
-Kernel::~Kernel(){
+Kernel::~Kernel()
+{
 	delete[] x;
 	delete[] x_square;
 }
 /**
- * @brief      { function_description }
+ * @brief      Dot function
  *
- * @param[in]  px    { parameter_description }
- * @param[in]  py    { parameter_description }
+ * @param[in]  px    Pointer to svm node px
+ * @param[in]  py    Pointer to svm node py
  *
- * @return     { description_of_the_return_value }
+ * @return     Dot product between px and py, i.e, \f$\left<px,py\right> = \sum_{i=1}^{n}px_{i}\cdot py_{i}\f$.
  */
-double Kernel::dot(const svm_node *px, const svm_node *py){
+double Kernel::dot(const svm_node *px, const svm_node *py)
+{
 	double sum = 0;
 	while(px->index != -1 && py->index != -1){
 		if(px->index == py->index){
@@ -397,15 +457,27 @@ double Kernel::dot(const svm_node *px, const svm_node *py){
 	return sum;
 }
 /**
- * @brief      { function_description }
+ * @brief      k function evaluation.
+ * 
+ * 		There are 5 options of k functions:
+ * 		<ul> 
+ *	 		<li>LINEAR:  \f$ K(X,Y) = X^{T}Y\f$.</li>
+ * 			<li>POLY:    \f$ K(X,Y) = \left(\gamma\cdot X^{T}  Y + r\right)^{d} , \gamma > 0 \f$</li>
+ * 			<li>RBF:     \f$ K(X,Y) = \exp\left(\frac{\left|X-Y\right|^2}{2\sigma^2}\right) \f$</li>
+ * 			<li>SIGMOID: \f$ K(X,Y) = \tanh(\gamma\cdot X^{T}Y + r) \f$</li>
+ * 			<li>PRECOMPUTED</li>
+ * 		</ul>
  *
- * @param[in]  x      { parameter_description }
- * @param[in]  y      { parameter_description }
- * @param[in]  param  The parameter
+ * @param[in]  x      Pointer to svm node x
+ * @param[in]  y      Pointer to svm node y
+ * @param[in]  param  svm structure of parameters
  *
- * @return     { description_of_the_return_value }
+ * @return     Evaluation of k function.
+ * 
+ * 
  */
-double Kernel::k_function(const svm_node *x, const svm_node *y,const svm_parameter &param){
+double Kernel::k_function(const svm_node *x, const svm_node *y,const svm_parameter &param)
+{
 	switch(param.kernel_type){
 		case LINEAR:
 			return dot(x,y);
@@ -1597,7 +1669,7 @@ private:
 // construct and solve various formulations
 
 /**
- * @brief      { function_description }
+ * @brief      Solve C SVC
  *
  * @param[in]  prob   The prob
  * @param[in]  param  The parameter

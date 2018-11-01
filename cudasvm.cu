@@ -8,6 +8,11 @@
 #include "helper_cuda.h"
 #include "libsvm/svm.h"
 
+#define KERNEL_LOOP(i, n) \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; \
+       i < (n); \
+       i += blockDim.x * gridDim.x)
+
 //!< for get_Q()
 struct svm_node** d_x = NULL;
 double *d_x_square = NULL;
@@ -22,7 +27,8 @@ svm_node** d_SV = NULL;
 double *d_output;
 __constant__ __device__ struct svm_parameter d_model_parameter;
 
-__device__ double dot(const svm_node *px, const svm_node *py){
+__device__ double dot(const svm_node *px, const svm_node *py)
+{
     double sum = 0;
     while(px->index != -1 && py->index != -1){
         if(px->index == py->index){
@@ -42,7 +48,8 @@ __device__ double dot(const svm_node *px, const svm_node *py){
 /** \brief
 
 */
-__device__ static double powi(double base, int times){
+__device__ static double powi(double base, int times)
+{
     double tmp = base, ret = 1.0;
     for(int t=times; t>0; t/=2){
         if(t%2==1){
@@ -53,7 +60,8 @@ __device__ static double powi(double base, int times){
     return ret;
 }
 
-__global__ void get_Q(struct svm_node** CUDA_x,signed char *CUDA_y, double *CUDA_x_square, int x, int starty, int problen, float *output){
+__global__ void get_Q(struct svm_node** CUDA_x,signed char *CUDA_y, double *CUDA_x_square, int x, int starty, int problen, float *output)
+{
 	int y = blockDim.x*blockIdx.x + threadIdx.x + starty;
     if( y>=problen ){
 		return;
@@ -83,7 +91,8 @@ __global__ void get_Q(struct svm_node** CUDA_x,signed char *CUDA_y, double *CUDA
 
 static int has_init = 0;
 
-void CUDA_init_model(const struct svm_node* x_space, int problen){
+void CUDA_init_model(const struct svm_node* x_space, int problen)
+{
     if( !has_init ){
         findCudaDevice(1, NULL);
 		has_init = 1;
@@ -104,7 +113,8 @@ void CUDA_init_model(const struct svm_node* x_space, int problen){
 	}
 }
 
-void CUDA_uninit_model(){
+void CUDA_uninit_model()
+{
 	checkCudaErrors(cudaFree(g_x_space));
     checkCudaErrors(cudaFree(d_output));
     checkCudaErrors(cudaFree(d_SV));
@@ -112,7 +122,8 @@ void CUDA_uninit_model(){
     d_output = NULL;
 }
 
-void CUDA_init_SVC_Q(int problen, const struct svm_node** x, const signed char* y, double* x_square, const svm_parameter& svm_parameter){
+void CUDA_init_SVC_Q(int problen, const struct svm_node** x, const signed char* y, double* x_square, const svm_parameter& svm_parameter)
+{
 	checkCudaErrors(cudaMalloc((void ***)&d_y, sizeof(signed char)*problen));
 	checkCudaErrors(cudaMemcpy(d_y, y, sizeof(signed char)*problen, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMalloc((void ***)&d_x_square, sizeof(double)*problen));
@@ -122,7 +133,8 @@ void CUDA_init_SVC_Q(int problen, const struct svm_node** x, const signed char* 
 	checkCudaErrors(cudaMemcpyToSymbol(d_svm_parameter, &svm_parameter, sizeof(svm_parameter)));
 }
 
-void CUDA_uninit_SVC_Q(){
+void CUDA_uninit_SVC_Q()
+{
 	checkCudaErrors(cudaFree(d_y));
 	checkCudaErrors(cudaFree(d_x_square));
 	checkCudaErrors(cudaFree(d_x));
@@ -131,7 +143,8 @@ void CUDA_uninit_SVC_Q(){
 	d_x = NULL;
 }
 
-void CUDA_get_Q(int x, int starty, int endy, float* output){
+void CUDA_get_Q(int x, int starty, int endy, float* output)
+{
     const int threadPerBlock = 256;
     const int blockPerGrid = (endy-starty+threadPerBlock-1)/threadPerBlock;
 	float* d_output;

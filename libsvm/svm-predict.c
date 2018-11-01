@@ -7,7 +7,10 @@
 
 //!< Cambiado mientras se hace port
 //!< int print_null(const char *s,...) {return 0;}
-int print_null_predict(const char *s,...) {return 0;}
+int print_null_predict(const char *s,...) 
+{
+	return 0;
+}
 
 
 static int (*info)(const char *fmt,...) = &printf;
@@ -27,7 +30,8 @@ static int max_line_len;
  *
  * @return     Line read
  */
-static char* readline(FILE *input){
+static char* readline(FILE *input)
+{
 	int len;
     if(fgets(line,max_line_len,input) == NULL){
 		return NULL;
@@ -46,7 +50,8 @@ static char* readline(FILE *input){
  *
  * @param[in]  line_num  The line number
  */
-void exit_input_error_predict(int line_num){
+void exit_input_error_predict(int line_num)
+{
 	fprintf(stderr,"Wrong input format at line %d\n", line_num);
 	exit(1);
 }
@@ -56,7 +61,8 @@ void exit_input_error_predict(int line_num){
  * @param      input   The input
  * @param      output  The output
  */
-void predict(FILE *input, FILE *output){
+void predict(FILE *input, FILE *output)
+{
 	int correct = 0;
 	int total = 0;
 	double error = 0;
@@ -187,7 +193,8 @@ void exit_with_help_predict()
  * 
  * @todo This function have to be changed in order to create a wrapper.
  */
-int svm_predict_main(int argc, char **argv){
+int svm_predict_main(int argc, char **argv)
+{
 //int main(int argc, char **argv){
 	FILE *input, *output;
 	int i;

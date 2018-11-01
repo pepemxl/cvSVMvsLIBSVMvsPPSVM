@@ -19,7 +19,8 @@
 
 typedef float Treal;//!< Por el momento usare prencisión sencilla
 
-namespace libsvm {
+namespace libsvm 
+{
 #include "svm.h"
 }
 
@@ -48,12 +49,20 @@ private:
     char* line;
     unsigned long int max_line_len;
 
-    void exit_input_error(int line_num) {
+    void exit_input_error(int line_num) 
+    {
         fprintf(stderr, "Wrong input format at line %d\n", line_num);
         exit(1);
     }
-
-    char* readline(FILE *input){
+    /**
+     * @brief      Method to read a line.
+     *
+     * @param      input  The input
+     *
+     * @return     A array of characteres.
+     */
+    char* readline(FILE *input)
+    {
         int len;
         if(fgets(this->line,this->max_line_len,input) == NULL){
             return NULL;
@@ -74,9 +83,12 @@ private:
     }
 
 public:
-
-    LIBSVM() : trainingDataStructsUsed(false), predictionDataStructsUsed(false){
-        line = NULL;
+    /**
+     * @brief      Constructs the object.
+     */
+    LIBSVM() : trainingDataStructsUsed(false), predictionDataStructsUsed(false)
+    {
+        line = NULL;                        
         max_nr_attr = 64;
         predict_probability = 1;
         param.cache_size = 512;             // in MB
@@ -101,9 +113,10 @@ public:
     }
 
     /**
-     * @brief      Destroys the object.
+     * @brief      Destroys the object. Calls function freeMem.
      */
-    virtual ~LIBSVM() {
+    virtual ~LIBSVM() 
+    {
 //        printf("Freeing used SVM memory\n");
 //        if (this->predictionDataStructsUsed) {
 //            free(x);
@@ -115,16 +128,21 @@ public:
     struct svm_parameter param;
     //static LIBSVM getInstance();
 
-
-    /// Methods
-    const char* getSVMName() const {
+    /**
+     * @brief      Gets the svm name.
+     *
+     * @return     The svm name.
+     */
+    const char* getSVMName() const 
+    {
         return "libSVM";
     }
     
     /**
      * @brief      Free memory
      */
-    void freeMem() {
+    void freeMem() 
+    {
         if (this->trainingDataStructsUsed){
             free(prob.y);
             free(prob.x);
@@ -136,16 +154,15 @@ public:
     }
 
     /**
-     * Reads in a file in svmlight format
-     * @param filename
-     */
-
-    /**
-     * @brief      Reads a problem.
+     * @brief      Reads a problem in a file in svmlight format.
      *
      * @param      filename  The filename
+     * 
+     * @todo There are an error in the detection of EOL, then have to be reviewed 
+     * and corrected.
      */
-    void read_problem(char *filename) {
+    void read_problem(char *filename) 
+    {
         setlocale(LC_NUMERIC,"C");
         setlocale(LC_ALL, "POSIX");
         int elements, max_index, inst_max_index, i, j;
@@ -252,8 +269,9 @@ public:
      *
      * @param[in]  _modelFileName  The model file name
      */
-    void saveModelToFile(const std::string _modelFileName) {
-        if (svm_save_model(_modelFileName.c_str(), this->model)) {
+    void saveModelToFile(const std::string _modelFileName)
+    {
+        if (svm_save_model(_modelFileName.c_str(), this->model)){
             fprintf(stderr, "Error: Could not save model to file %s\n", _modelFileName.c_str());
             exit(EXIT_FAILURE);
         }
@@ -269,7 +287,8 @@ public:
      *
      * @param[in]  _modelFileName  The model file name
      */
-    void loadModelFromFile(const std::string _modelFileName) {
+    void loadModelFromFile(const std::string _modelFileName)
+    {
         this->freeMem();
         /// @WARNING: This is really important, ROS seems to set the system locale which takes decimal commata instead of points which causes the file input parsing to fail
         // Do not use the system locale setlocale(LC_ALL, "C");
@@ -308,7 +327,8 @@ public:
      *
      * @return     The problem.
      */
-    svm_problem getProblem() {
+    svm_problem getProblem()
+    {
         return this->prob;
     }
     /**
@@ -319,32 +339,28 @@ public:
      *
      * @return     result of prediction
      */
-    float predictLabel(svm_node* _sample, double* _probEstimate){
+    float predictLabel(svm_node* _sample, double* _probEstimate)
+    {
         float predict_label = svm_predict_probability(model, _sample, _probEstimate);
         return predict_label;
     }
     /**
      * @brief      { After read in the training samples from a file, set parameters for training and call training procedure}
      */
-    void train() {
+    void train()
+    {
         model = svm_train(&prob, &param);
         trainingDataStructsUsed = true;
     }
-
     /**
-     * Generates a single detecting feature vector (vec1) from the trained support vectors, for use e.g. with the HOG algorithm
+     * @brief      Gets the single detecting vector. Generates a single detecting feature vector (vec1) from the trained support vectors, for use e.g. with the HOG algorithm
      * vec1 = sum_1_n (alpha_y*x_i). (vec1 is a 1 x n column vector. n = feature vector length )
-     * @param singleDetectorVector resulting single detector vector for use in openCV HOG
-     * @param singleDetectorVectorIndices vector containing indices of features inside singleDetectorVector
-     */
-
-    /**
-     * @brief      Gets the single detecting vector.
      *
-     * @param      singleDetectorVector         The single detector vector
-     * @param      singleDetectorVectorIndices  The single detector vector indices
+     * @param      singleDetectorVector         resulting single detector vector for use in openCV HOG
+     * @param      singleDetectorVectorIndices  vector containing indices of features inside singleDetectorVector
      */
-    void getSingleDetectingVector(std::vector<Treal>& singleDetectorVector, std::vector<unsigned int>& singleDetectorVectorIndices) {
+    void getSingleDetectingVector(std::vector<Treal>& singleDetectorVector, std::vector<unsigned int>& singleDetectorVectorIndices) 
+    {
         // Now we use the trained svm to retrieve the single detector vector
         // COMENTAR para aplicacion
         //printf("Calculating single detecting feature vector out of support vectors (may take some time)\n");
@@ -378,7 +394,8 @@ public:
      *
      * @return     detection threshold / bias
      */
-    double getThreshold() const {
+    double getThreshold() const 
+    {
         return model->rho[0];
     }
 

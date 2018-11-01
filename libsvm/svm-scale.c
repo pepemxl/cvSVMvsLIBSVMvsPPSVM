@@ -51,7 +51,8 @@ int clean_up(FILE *fp_restore, FILE *fp, const char *msg);
  * 
  * @todo This function have to be changed in other to create a wrapper.
  */
-int svm_scale_main(int argc,char **argv){
+int svm_scale_main(int argc,char **argv)
+{
 	int i,index;
 	FILE *fp, *fp_restore = NULL;
 	char *save_filename = NULL;

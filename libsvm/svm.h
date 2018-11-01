@@ -23,20 +23,20 @@ struct svm_node{
  * Struct
 */
 struct svm_problem{
-    int l; //!< Number of training vectors in $\math{b}{R}^{n}$
-    double *y; //!< Vector with corresponding values, i.e., fir C-SVC $y_{i}\in {-1,1}$
+    int l; //!< Number of training vectors in \f$ \mathbb{R}^{n} \f$
+    double *y; //!< Vector with corresponding values, i.e., fir C-SVC \f$y_{i}\in {-1,1}\f$
 	struct svm_node **x;
 };
 
 /** Enum to save distint SVM formulation names (svm_type)*/
 enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };
 /** Enum to save distinct kernel types
- * linear:      $K(x_{i},x_{j}) = x_{i}^{T}x_{j}$.
- * polynomial:  $K(x_{i},x_{j}) = \left(\gamma x_{i}^{T}x_{j}+r\right)^{d}, \gamma > 0$.
- * radial basis function (RBF): $K(x_{i},x_{j}) = exp(-\gamma ||x_{i}-x_{j}||^{2}), \gamma > 0$.
- * sigmoid:     $K(x_{i},x_{j}) = tanh(\gamma x_{i}^{T}x_{j}+r)$.
+ * linear:      \f$K(x_{i},x_{j}) = x_{i}^{T}x_{j}\f$.
+ * polynomial:  \f$K(x_{i},x_{j}) = \left(\gamma x_{i}^{T}x_{j}+r\right)^{d}, \gamma > 0\f$.
+ * radial basis function (RBF): \f$K(x_{i},x_{j}) = exp(-\gamma ||x_{i}-x_{j}||^{2}), \gamma > 0\f$.
+ * sigmoid:     \f$K(x_{i},x_{j}) = tanh(\gamma x_{i}^{T}x_{j}+r)\f$.
  * precomputed:
- * $\gamma,r,$ and $d$ are kernel parameters.
+ * \f$\gamma,r,\f$ and \f$d\f$ are kernel parameters.
 */
 enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED };
 
@@ -52,31 +52,31 @@ enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED };
  *
 */
 struct svm_parameter{
-    int     svm_type;
-    int     kernel_type;
-    int     degree;         /* for poly , in opencv use a double*/
-    double  gamma;          /* for poly/rbf/sigmoid */
-    double  coef0;          /* for poly/sigmoid */
-	/* these are for training only */
-    double  cache_size;     /* in MB */
-    double  eps;            /* stopping criteria */
-    double  C;              /* for C_SVC, EPSILON_SVR and NU_SVR, C > 0 is the penalty parameter of the error term */
-    int     nr_weight;		/* for C_SVC */
-    int     *weight_label;	/* for C_SVC */
-    double  *weight;		/* for C_SVC */
-    double  nu;             /* for NU_SVC, ONE_CLASS, and NU_SVR */
-    double  p;              /* for EPSILON_SVR */
-    int     shrinking;      /* use the shrinking heuristics */
-    int     probability;    /* do probability estimates */
+    int     svm_type;       //!< Integer that indicates the SVM type
+    int     kernel_type;    //!< Integer that indicates the kernel type
+    int     degree;         //!< for poly , in opencv use a double
+    double  gamma;          //!< for poly/rbf/sigmoid
+    double  coef0;          //!< for poly/sigmoid
+    /* these are for training only */
+    double  cache_size;     //!< in MB
+    double  eps;            //!< stopping criteria
+    double  C;              //!< for C_SVC, EPSILON_SVR and NU_SVR, C > 0 is the penalty parameter of the error term
+    int     nr_weight;		//!< for C_SVC
+    int     *weight_label;	//!< for C_SVC
+    double  *weight;		//!< for C_SVC
+    double  nu;             //!< for NU_SVC, ONE_CLASS, and NU_SVR
+    double  p;              //!< for EPSILON_SVR
+    int     shrinking;      //!< use the shrinking heuristics
+    int     probability;    //!< do probability estimates
 };
 
 /**
  * @brief svm_model (for quadratic minimization problems)
  * C-support vector classification C-SVC
- * $\nu$-support vector classificaction  $\nu$-SVC
+ * \f$\nu\f$-support vector classificaction  \f$\nu\f$-SVC
  * Distribution estimation one-class SVM
- * $\epsilon$-support vector regression $\epsilon$-SVR
- * $\nu$-support vector regression $\nu$-SVR
+ * \f$\epsilon\f$-support vector regression \f$\epsilon\f$-SVR
+ * \f$\nu\f$-support vector regression \f$\nu\f$-SVR
  *
  *
  */

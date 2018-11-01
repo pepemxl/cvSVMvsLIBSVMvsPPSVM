@@ -196,6 +196,8 @@ public:
     void calculateFeaturesFromInput(const string  imageFilename, vector<float> &featureVector, HOGDescriptor &hog);
     void detectTrainingSetTest(const HOGDescriptor &hog, const double hitThreshold, QStringList &posFileNames, QStringList &negFileNames);
     void detectTest(const HOGDescriptor &hog, const double hitThreshold, Mat &imageData);
+    double computeProbability(cv::Mat image, LIBSVM &SVM_instancia, HOGDescriptor &hog, int &classification);
+    void calculateFeaturesFromInput(cv::Mat imageData, vector<float> &featureVector, HOGDescriptor &hog);
 private slots:
     void on_pushButton_clicked();
 

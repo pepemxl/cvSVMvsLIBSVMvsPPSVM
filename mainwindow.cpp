@@ -910,6 +910,37 @@ void MainWindow::calculateFeaturesFromInput(const string imageFilename, vector<f
     imageData.release(); // Release the image again after features are extracted
 }
 /**
+ * @brief      Calculates the features from input.
+ *
+ * @param[in]  imageFilename  The image filename
+ * @param      featureVector  The feature vector
+ * @param      hog            The hog
+ */
+void MainWindow::calculateFeaturesFromInput(cv::Mat imageData, vector<float> &featureVector, HOGDescriptor& hog) {
+    /** for imread flags from openCV documentation,
+     * @see http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html?highlight=imread#Mat imread(const string& filename, int flags)
+     * @note If you get a compile-time error complaining about following line (esp. imread),
+     * you either do not have a current openCV version (>2.0)
+     * or the linking order is incorrect, try g++ -o openCVHogTrainer main.cpp `pkg-config --cflags --libs opencv`
+     */
+    if (imageData.empty()){
+        featureVector.clear();
+        printf("Error: HOG image '%s' is empty, features calculation skipped!\n", "imageFilename");
+        return;
+    }
+    // Check for mismatching dimensions
+    if (imageData.cols != hog.winSize.width || imageData.rows != hog.winSize.height) {
+        //featureVector.clear();
+        printf("Warn: Image '%s' dimensions (%u x %u) do not match HOG window size (%u x %u)!", "imageFilename", imageData.cols, imageData.rows, hog.winSize.width, hog.winSize.height);
+        printf(" Image will be resized\n");
+        cv::resize(imageData,imageData,Size(128,128));
+        //return;
+    }
+    vector<Point> locations;
+    hog.compute(imageData, featureVector, winStride, trainingPadding, locations);
+    imageData.release(); // Release the image again after features are extracted
+}
+/**
  * @brief      Create lower version of string.
  *
  * @param[in]  in    { parameter_description }
@@ -1417,31 +1448,35 @@ void MainWindow::on_pushButton_7_clicked()
     fflush(stdout);
 }
 
+double MainWindow::computeProbability(cv::Mat image,LIBSVM &SVM_instancia,HOGDescriptor &hog,int &classification){
+    double probabilidad = 0.0;
+    classification = 0;
+    const double hitThreshold = SVM_instancia.getThreshold();
+    vector<float> featureVector;
+    calculateFeaturesFromInput(image, featureVector, hog);
+    struct svm_node *x;
+    x = (struct svm_node *)malloc(featureVector.size()*sizeof(struct svm_node));
+    for(int j=0;j < featureVector.size();++j){
+        x[j].value = featureVector[j];
+        x[j].index = j+1;
+    }
+    classification = SVM_instancia.predictLabel(x,&probabilidad);
+    free(x);
+    return probabilidad;
+}
+
 /**
  * @brief      SVM cuda version of predict propability test.
  */
 void MainWindow::on_pushButton_8_clicked()
 {
-    int contador = 0;
-    unsigned long int elapsed_nanoseconds1 = 0;
-    unsigned long int elapsed_nanoseconds2 = 0;
-    unsigned long int elapsed_useconds1 = 0;
-    unsigned long int elapsed_useconds2 = 0;
-    unsigned long int total_elapsed_nanoseconds1 = 0;
-    unsigned long int total_elapsed_nanoseconds2 = 0;
-    unsigned long int total_elapsed_useconds1 = 0;
-    unsigned long int total_elapsed_useconds2 = 0;
-    double mean_elapsed_nanoseconds1 = 0;
-    double mean_elapsed_nanoseconds2 = 0;
-    std::chrono::duration<double, std::nano> elapsed1;
-    std::chrono::duration<double, std::nano> elapsed2;
-    //auto startChrono = std::chrono::steady_clock::now();
-    auto startChrono = std::chrono::system_clock::now();
-    //auto endChrono = std::chrono::steady_clock::now();
-    auto endChrono = std::chrono::system_clock::now();
     LIBSVM SVM_instancia;
     HOGDescriptor hog;
     hog.winSize = Size(128, 128);
+    string svmModelFile = "svm_model.dat";
+    SVM_instancia.loadModelFromFile(svmModelFile);
+    int classification = 0;
+    double probabilidad = 0.0;
     float percent;
     this->setDirectoryIn(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/Humanos"));
     this->setDirectoryTrainSet1(QDir("/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTrain"));
@@ -1456,71 +1491,19 @@ void MainWindow::on_pushButton_8_clicked()
     int nNegativeTrainingImages = this->getFilesInDirectory(this->directoryTrainSet2,negativeTrainingImages);
     int nPositiveTestImages = this->getFilesInDirectory(this->directoryTestSet1,positiveTestImages);
     int nNegativeTestImages = this->getFilesInDirectory(this->directoryTestSet2,negativeTestImages);
-    //foreach(QString filename, positiveTrainingImages) {
-    //    std::cout << filename.toStdString() << std::endl;
-    //}
-    std::cout << nPositiveTrainingImages << ",";
-    std::cout << nNegativeTrainingImages << ",";
-    std::cout << nPositiveTestImages << ",";
-    std::cout << nNegativeTestImages << std::endl;
-    string featuresFile("features.dat");
-    string svmModelFile = "svm_model.dat";
-    string descriptorVectorFile = "descriptorvector.dat";
-    string cvHOGFile = "cvHOGClassifier.yaml";
     int overallSamples = nPositiveTrainingImages+nNegativeTrainingImages;
     if(overallSamples == 0){
         printf("No training sample files found, nothing to do!\n");
         return;
     }
-    SVM_instancia.loadModelFromFile(svmModelFile);
-    // Guardando features de HOG
-    vector<float> descriptorVector;
-    vector<unsigned int> descriptorVectorIndices;
-    SVM_instancia.getSingleDetectingVector(descriptorVector, descriptorVectorIndices);
-    //saveDescriptorVectorToFile(descriptorVector, descriptorVectorIndices, descriptorVectorFile);
-    /// save opencv hog descriptor
-    const double hitThreshold = SVM_instancia.getThreshold();
-    std::cout << hitThreshold << std::endl;
+
     /// Prediction
-    vector<float> featureVector;
     for(int i = 0 ;i < positiveTestImages.size();++i){
         QString currentImageFile = positiveTestImages.at(i);
-        //QString currentImageFile = negativeTestImages.at(0);
-        //startChrono = std::chrono::steady_clock::now();
-        startChrono = std::chrono::system_clock::now();
-        calculateFeaturesFromInput(currentImageFile.toStdString(), featureVector, hog);
-        //usleep(100000);
-        //endChrono = std::chrono::steady_clock::now();
-        endChrono = std::chrono::system_clock::now();
-        elapsed1 = endChrono-startChrono;
-        elapsed_nanoseconds1 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed1).count();
-        elapsed_useconds1 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed1).count();
-        total_elapsed_nanoseconds1 += elapsed_nanoseconds1;
-        total_elapsed_useconds1 += elapsed_useconds1;
-        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
-        this->x = (struct svm_node *)malloc(featureVector.size()*sizeof(struct svm_node));
-        startChrono = std::chrono::system_clock::now();
-        for(int j=0;j < featureVector.size();++j){
-            this->x[j].value = featureVector[j];
-            this->x[j].index = j+1;
-        }
-        double valueProbEstimate = 0;
-        int classification = 0;
-        classification = SVM_instancia.predictLabel(this->x,&valueProbEstimate);
-        endChrono = std::chrono::system_clock::now();
-        elapsed2 = endChrono-startChrono;
-        elapsed_nanoseconds2 = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed2).count();
-        elapsed_useconds2 = std::chrono::duration_cast<std::chrono::microseconds>(elapsed2).count();
-        total_elapsed_nanoseconds2 += elapsed_nanoseconds2;
-        total_elapsed_useconds2 += elapsed_useconds2;
-        free(this->x);
-        std::cout << "Corrida" << i << ": " <<  classification << std::endl;
-        std::cout << "Probabilidad: " << valueProbEstimate << std::endl;
-        //std::cout << "Tiempo Calculo Features: " << elapsed_nanoseconds1 << std::endl;
-        //std::cout << "Tiempo Calculo SVM: " << elapsed_nanoseconds2 << std::endl;
-        contador++;
+        Mat imageData = cv::imread(currentImageFile.toStdString(), IMREAD_GRAYSCALE);
+        probabilidad = this->computeProbability(imageData,SVM_instancia,hog,classification);
+        std::cout << probabilidad << std::endl;
+
     }
-    std::cout << "Tiempo Calculo Features: " << total_elapsed_useconds1/(double)contador << std::endl;
-    std::cout << "Tiempo Calculo SVM: " << total_elapsed_useconds2/(double)contador  << std::endl;
     fflush(stdout);
 }

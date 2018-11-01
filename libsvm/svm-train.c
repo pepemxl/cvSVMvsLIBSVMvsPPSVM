@@ -74,7 +74,8 @@ static int max_line_len;
  *
  * @return     { description_of_the_return_value }
  */
-static char* readline(FILE *input){
+static char* readline(FILE *input)
+{
 	int len;
 	if(fgets(line,max_line_len,input) == NULL)
 		return NULL;
@@ -302,7 +303,8 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
  *
  * @param[in]  filename  The filename
  */
-void read_problem(const char *filename){
+void read_problem(const char *filename)
+{
 	int max_index, inst_max_index, i;
 	size_t elements, j;
 	FILE *fp = fopen(filename,"r");
